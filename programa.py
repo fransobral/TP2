@@ -281,8 +281,8 @@ def mover_archivos_drive(drive_service,file_id:str,folder_id:str) -> None:
                                         fields='id, parents').execute()
 
 def main()-> None:
-    drive_service = service_drive.obtener_servicio()
-    gmail_service = service_gmail.obtener_servicio()
+    drive_service = service_drive.obtener_servicio() #este es el servicio de drive
+    gmail_service = service_gmail.obtener_servicio() #este es el servicio de gmail
     print("\nHola! Bienvenidos a nuestro servicio de google drive y gmail.\n")
     menu(drive_service)
     
