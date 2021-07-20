@@ -1,7 +1,7 @@
 import service_drive
 from googleapiclient.http import MediaFileUpload,MediaIoBaseDownload
 import os,io,shutil
-
+import service_gmail
 
 def verificacion_eleccion(numero:int) -> tuple:
     """ 
@@ -282,6 +282,7 @@ def mover_archivos_drive(drive_service,file_id:str,folder_id:str) -> None:
 
 def main()-> None:
     drive_service = service_drive.obtener_servicio()
+    gmail_service = service_gmail.obtener_servicio()
     print("\nHola! Bienvenidos a nuestro servicio de google drive y gmail.\n")
     menu(drive_service)
     
