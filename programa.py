@@ -452,9 +452,6 @@ def main()-> None:
     
     print("Muchas gracias por utilizar nuestro programa!")
 
-""" if __name__ == '__main__':
-    main() """
+if __name__ == '__main__':
+    main() 
 
-drive_service = service_drive.obtener_servicio() #este es el servicio de drive
-
-sincronizacion_drive(drive_service)
