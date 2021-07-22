@@ -1,6 +1,6 @@
 import service_drive
 from googleapiclient.http import MediaFileUpload,MediaIoBaseDownload
-import os,io,shutil
+import os,io,shutil,tempfile,time
 import service_gmail
 
 def verificacion_eleccion(numero:int) -> tuple:
@@ -26,7 +26,7 @@ def verificador_decision(decision:str)-> tuple:
         print("\nMuy bien, que desea hacer a continuacion?\n")
     return correcta_eleccion
 
-def elecciones(eleccion:int,drive_service) -> str:
+def elecciones(eleccion:int,drive_service) -> str: #modularizarr
     """ 
     Pre: Recibe un numero.
     Post: En base al numero, decide que funcion ejecutar y retorna un str que indica si el usuario quiere cerrar el programa o no.
@@ -46,9 +46,10 @@ def elecciones(eleccion:int,drive_service) -> str:
     elif eleccion == 3:
         correcta_eleccion = verificacion_eleccion(3)
         if correcta_eleccion:
+            file_path = input("Por favor ingrese la ruta del archivo: ")
             file_name = input("\nUsted a decidido subir un archivo nuevo. Por favor ingrese el nombre del archivo y la extension: ")
             folder_id = input("\nPor favor introduzca el id de la carpeta a la cual quiere subir este archivo: ")
-            subir_archivo_drive(drive_service,file_name,folder_id)
+            subir_archivo_drive(drive_service,file_name,folder_id,f"{file_path}/{file_name}")
             decision = input("Desea seguir decargando archivos?: (si/no): ")
             correcta_eleccion = verificador_decision(decision)
     elif eleccion == 4:
@@ -63,7 +64,7 @@ def elecciones(eleccion:int,drive_service) -> str:
     elif eleccion == 5:
         correcta_eleccion = verificacion_eleccion(5)
         while correcta_eleccion:
-            #ejecutar funcion
+            sincronizacion_drive(drive_service)
             decision = input("Desea seguir decargando archivos?: (si/no): ")
             correcta_eleccion = verificador_decision(decision)
             pass
@@ -306,14 +307,15 @@ def crear_archivo_drive(drive_service,file_name:str,folder_id:str)-> None:
 
     print('ID del archivo: %s' % file.get('id'))
 
-def subir_archivo_drive(drive_service,file_name:str,folder_id:str) -> None: 
+def subir_archivo_drive(drive_service,file_name:str,folder_id:str,file_path:str) -> None: 
     """ 
     Pre: Recibe los servicios de google drive, el n ombre del archivo y el id de la carpeta.
     Post: Recibe un archivo y lo sube a la carpeta deseada por el usuraio.
     """
 
-    file_metadata = {'name': file_name} #ver como obtener la fecha de modificacion de un archivo local. Si no coincide con la subida, se vuelve a subir.
-    media = MediaFileUpload(file_name)
+    file_metadata = {'name': file_name} 
+    filepath = f"{file_path}/{file_name}"
+    media = MediaFileUpload(filepath)
     file = drive_service.files().create(body=file_metadata,
                                         media_body=media,
                                         fields='id').execute()
@@ -373,6 +375,75 @@ def mover_archivos_drive(drive_service,file_id:str,folder_id:str) -> None:
                                         removeParents=previous_parents,
                                         fields='id, parents').execute()
 
+def sincronizacion_drive(drive_service)-> None: #modularizar 
+    """ 
+    Pre: Servicio de drive API.
+    Post: Sincronza los archivos locales de determinada carpeta con los de la nube de otra carpeta especificada por el usuario.
+    """
+    print("\nVamos a sincronizar sus archivos! Por favor indiquenos su carpeta a sincronizar y su equivalente en el drive.\n")
+    carpeta_local = "/home/fransobral/Documents/prueba"#input("\nPor favor ingrese la ruta de la carpeta local a sincronizar: ")
+    carpeta_drive = "18_khSXz0n70PQExWRJHrUygBGMS-1kOu"#input("\nPor favor ingrese el id de la carpeta en drive a sincronizar: ")
+
+    while not os.path.exists(carpeta_local):
+        carpeta_local = input("Ese diectorio no existe, por favor ingreselo nuevamente: ")
+
+    primer_filtro_local = list()
+    primer_filtro_drive = list()
+
+    with os.scandir(carpeta_local) as ficheros:
+        for fichero in ficheros:
+            ultima_modifiacion = time.ctime(os.path.getmtime(fichero))
+
+            lista_l = [fichero.name,ultima_modifiacion,os.path.getsize(fichero)]
+            primer_filtro_local.append(lista_l) #creo una lista con el nombre, el ultimo tiempo de modificacion local y su peso.
+    
+    archivos_drive = drive_service.files().list(q= f"'{carpeta_drive}' in parents",fields="nextPageToken, files(id, name, size, modifiedTime, mimeType)").execute()
+    for archivo in archivos_drive.get('files', []):
+        lista_d = [archivo.get('name'),archivo.get('modifiedTime'),archivo.get('size'),archivo.get('id')]
+        primer_filtro_drive.append(lista_d)
+    
+    segundo_filtro_local = list() #aca van a ir loa archivos que no coincidan el peso o la fecha de modificacion con los del drive
+    segundo_filtro_drive = list() #aca van a ir loa archivos que no coincidan el peso o la fecha de modificacion con los locales
+    contador = 0
+    for i in primer_filtro_drive: #veo si coinciden las fechas de modificacion y el tamaño.
+        if primer_filtro_local[contador][1] != primer_filtro_drive[contador][1] or primer_filtro_local[contador][2] != primer_filtro_drive[contador][2]:
+            segundo_filtro_local.append(primer_filtro_local[contador])
+            segundo_filtro_drive.append(primer_filtro_drive[contador])
+        contador += 1
+    
+    with tempfile.TemporaryDirectory() as temporal: #CREAR UNA CARPETA TEMPORAL LOCAL PARA DESCARGAR LOS ARCHIVOS Y LUEGO BORRARLA
+        contador = 0
+        for i in segundo_filtro_local:
+            
+            archivo_local = segundo_filtro_local[contador][0]
+            archivo_drive = segundo_filtro_drive[contador][0]
+            
+            descargar_archivo_drive(drive_service,segundo_filtro_drive[contador][3],segundo_filtro_drive[contador][0],temporal)
+
+            with open(f"{carpeta_local}/{archivo_local}", 'r') as file_l:
+                with open(f"{temporal}/{archivo_drive}", 'r') as file_d:
+                    difference = set(file_l).difference(file_d)
+
+            difference.discard('\n')
+
+            with open('some_output_file.txt', 'w') as file_out:
+                for line in difference:
+                    file_out.write(line)
+
+            if os.stat('some_output_file.txt').st_size != 0:
+                print(f"\nEl archivo {archivo_local} tiene modificaciones y sera subido a la nube.")
+                subir_archivo_drive(drive_service,archivo_local,carpeta_drive,carpeta_local)
+                drive_service.files().delete(fileId=segundo_filtro_drive[contador][3]).execute() #elimina el archivo viejo
+
+            file_out.close()
+            os.remove('some_output_file.txt')
+            file_l.close()
+            file_d.close()
+            contador += 1
+    print("\nTodo subido con exito!\n")
+        
+
+
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
     gmail_service = service_gmail.obtener_servicio() #este es el servicio de gmail
@@ -381,5 +452,9 @@ def main()-> None:
     
     print("Muchas gracias por utilizar nuestro programa!")
 
-if __name__ == '__main__':
-    main()
+""" if __name__ == '__main__':
+    main() """
+
+drive_service = service_drive.obtener_servicio() #este es el servicio de drive
+
+sincronizacion_drive(drive_service)
