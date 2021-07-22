@@ -390,7 +390,7 @@ def sincronizacion_drive(drive_service)-> None: #modularizar
     primer_filtro_local = list()
     primer_filtro_drive = list()
 
-    with os.scandir(carpeta_local) as ficheros:
+    with os.scandir(carpeta_local) as ficheros: #escanea todos los archivos en determinada carpeta
         for fichero in ficheros:
             ultima_modifiacion = time.ctime(os.path.getmtime(fichero))
 
@@ -418,7 +418,7 @@ def sincronizacion_drive(drive_service)-> None: #modularizar
             archivo_local = segundo_filtro_local[contador][0]
             archivo_drive = segundo_filtro_drive[contador][0]
             
-            descargar_archivo_drive(drive_service,segundo_filtro_drive[contador][3],segundo_filtro_drive[contador][0],temporal)
+            descargar_archivo_drive(drive_service,segundo_filtro_drive[contador][3],segundo_filtro_drive[contador][0],temporal) #es necesaria la descarga de los archivos para luego comparar linea por linea
 
             with open(f"{carpeta_local}/{archivo_local}", 'r') as file_l:
                 with open(f"{temporal}/{archivo_drive}", 'r') as file_d:
@@ -436,7 +436,7 @@ def sincronizacion_drive(drive_service)-> None: #modularizar
                 drive_service.files().delete(fileId=segundo_filtro_drive[contador][3]).execute() #elimina el archivo viejo
 
             file_out.close()
-            os.remove('some_output_file.txt')
+            os.remove('some_output_file.txt') #elimina el txt
             file_l.close()
             file_d.close()
             contador += 1
