@@ -402,8 +402,8 @@ def sincronizacion_drive(drive_service)-> None: #modularizar
         lista_d = [archivo.get('name'),archivo.get('modifiedTime'),archivo.get('size'),archivo.get('id')]
         primer_filtro_drive.append(lista_d)
     
-    segundo_filtro_local = list() #aca van a ir loa archivos que no coincidan el peso o la fecha de modificacion con los del drive
-    segundo_filtro_drive = list() #aca van a ir loa archivos que no coincidan el peso o la fecha de modificacion con los locales
+    segundo_filtro_local = list() #aca van a ir los archivos que no coincidan el peso o la fecha de modificacion con los del drive
+    segundo_filtro_drive = list() #aca van a ir los archivos que no coincidan el peso o la fecha de modificacion con los locales
     contador = 0
     for i in primer_filtro_drive: #veo si coinciden las fechas de modificacion y el tamaño.
         if primer_filtro_local[contador][1] != primer_filtro_drive[contador][1] or primer_filtro_local[contador][2] != primer_filtro_drive[contador][2]:
@@ -411,7 +411,7 @@ def sincronizacion_drive(drive_service)-> None: #modularizar
             segundo_filtro_drive.append(primer_filtro_drive[contador])
         contador += 1
     
-    with tempfile.TemporaryDirectory() as temporal: #CREAR UNA CARPETA TEMPORAL LOCAL PARA DESCARGAR LOS ARCHIVOS Y LUEGO BORRARLA
+    with tempfile.TemporaryDirectory() as temporal: #carpeta temporal local para descragar los archivos y queluego se eliminen.
         contador = 0
         for i in segundo_filtro_local:
             
