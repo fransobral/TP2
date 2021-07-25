@@ -2,9 +2,10 @@ from email import message
 from email.message import Message
 from typing import Tuple
 from googleapiclient.discovery import Resource
+from random import randit
 import service_drive
 from googleapiclient.http import MediaFileUpload,MediaIoBaseDownload
-import os,io,shutil,tempfile,time
+import os,io,shutil,tempfile,time,sys
 import service_gmail
 import csv
 import base64
@@ -603,6 +604,7 @@ def mandar_mail(sender, to, subject, message_text, validacion) -> None:
         raw_string = base64.urlsafe_b64encode(mime_message.as_string())
 
         message = service_gmail.users().messages().send(userId = "yo", body = {"raw": raw_string}).execute()
+        
 
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
