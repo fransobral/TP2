@@ -1,9 +1,16 @@
+from email import message
+from email.message import Message
 from typing import Tuple
 from googleapiclient.discovery import Resource
+from random import randit
 import service_drive
 from googleapiclient.http import MediaFileUpload,MediaIoBaseDownload
-import os,io,shutil,tempfile,time
+import os,io,shutil,tempfile,time,sys
 import service_gmail
+import csv
+import base64
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 
 def verificacion_eleccion(numero:int) -> tuple:
@@ -514,6 +521,8 @@ def crear_carpeta_temporal(drive_service:Resource,segundo_filtro_local:list,segu
             file_d.close()
             contador += 1
 
+    print("\nTodo subido con exito!\n")
+
 def sincronizacion_drive(drive_service:Resource)-> None:  
     """ 
     Pre: Servicio de drive API.
@@ -539,6 +548,63 @@ def sincronizacion_drive(drive_service:Resource)-> None:
 
     crear_carpeta_temporal(drive_service,segundo_filtro_local,segundo_filtro_drive,carpeta_local,carpeta_drive)
     print("\nSincronizacion exitosa!\n")
+# >>>>>>> 2bea9ae4774dabd5b3b7a535c64ba2836e41b0a5
+def validar_mail_evaluacion() -> None:
+    # Verificar que los datos de los alumnos sean correctos
+    pass
+
+def recibir_mail_evaluacion() -> None:
+    # Recibir los datos, mandar a validarlos, en caso de ser correcto seguir, sino volver a pedir.
+    validacion = validar_mail_evaluacion()
+    mandar_mail()
+
+def buscar_mails(service_gmail, query_string,label_ids =[]) -> None:
+    try:
+        message_list_response = service_gmail.users().messages().list(
+            userId = 'yo',
+            labelIds = label_ids,
+            q = query_string
+        ).execute()
+
+        message_items = message_list_response.get('messages')
+        nextPageToken = message_items.get('nextPageToken')
+
+        while nextPageToken:
+            message_list_response = service_gmail.users().messages().list(
+                userId = 'yo',
+                labelIds = label_ids,
+                q = query_string,
+                pageToken = nextPageToken
+            ).execute()
+
+        message_items.extend(message_list_response.get('messages'))
+        nextPageToken = message_items.get('nextPageToken')
+
+    except Exception as e:
+        return None
+
+def mandar_mail(sender, to, subject, message_text, validacion) -> None:
+    if validacion == True:
+        message = "Tu entrega esta correcta."
+        mime_message = MIMEMultipart()
+        mime_message['to'] = "ipasman@fi.uba.ar"
+        mime_message['from'] = "algoritmos1costa@gmail.com"
+        mime_message['subject'] = "Entrega Evaluacion"
+        mime_message.attach(MIMEText(message, "plain"))
+        raw_string = base64.urlsafe_b64encode(mime_message.as_string())
+
+        message = service_gmail.users().messages().send(userId = "yo", body = {"raw": raw_string}).execute()
+    else:
+        message = "Tu entrega esta incorrecta, por favor revisar y enviar datos correctamente."
+        mime_message = MIMEMultipart()
+        mime_message['to'] = "ipasman@fi.uba.ar"
+        mime_message['from'] = "algoritmos1costa@gmail.com"
+        mime_message['subject'] = "Entrega Evaluacion"
+        mime_message.attach(MIMEText(message, "plain"))
+        raw_string = base64.urlsafe_b64encode(mime_message.as_string())
+
+        message = service_gmail.users().messages().send(userId = "yo", body = {"raw": raw_string}).execute()
+        
 
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
