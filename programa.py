@@ -13,6 +13,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 
+
 def verificacion_eleccion(numero:int) -> tuple:
     """ 
     Pre: Le ingreso el numero de opcion elegida por el usuario.
