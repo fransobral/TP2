@@ -2,6 +2,7 @@ from email import message
 from email.message import Message
 from typing import Tuple
 from googleapiclient.discovery import Resource
+from random import randit
 import service_drive
 from googleapiclient.http import MediaFileUpload,MediaIoBaseDownload
 import os,io,shutil,tempfile,time,sys
@@ -604,13 +605,11 @@ def mandar_mail(sender, to, subject, message_text, validacion) -> None:
 
         message = service_gmail.users().messages().send(userId = "yo", body = {"raw": raw_string}).execute()
         
-
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
     gmail_service = service_gmail.obtener_servicio() #este es el servicio de gmail
     print("\nHola! Bienvenidos a nuestro servicio de google drive y gmail.\n")
     menu(drive_service)
-    
     print("Muchas gracias por utilizar nuestro programa!")
 
 if __name__ == '__main__':
