@@ -100,7 +100,7 @@ def elecciones(eleccion:int,drive_service:Resource) -> str: #modularizarr
     
     return exit
 
-def menu(drive_service) -> None:
+def menu(drive_service:Resource) -> None:
     """ 
     Pre: Recibe el servicio de google drive.
     Post: Printea las opciones del programa para que el usuario eliga una.
@@ -181,11 +181,38 @@ def listar_archivos_drive(drive_service:Resource)-> None: #no esta mostrando tod
             id_carpeta = ids_carpetas[carpeta-1][0]
             archivos = drive_service.files().list(q= f"'{id_carpeta}' in parents",fields="nextPageToken, files(id, name, mimeType)").execute()
         elif decision == "b":
-            obtener_ids(carpetas,ids_archivos,ids_carpetas)
+            id = obtener_ids(carpetas,ids_archivos,ids_carpetas)
             listar = False
         else:
             print("\nUsted eligio vover al menu principal.\n")
             listar = False
+
+def navegacion_carpetas_drive(drive_service:Resource) -> str:
+    """ 
+    Pre: Recibe lo servicios de google drive.
+    Post: Permite la navegacion por carpetas de drive.
+    """
+    listar = True
+    archivos = drive_service.files().list(fields="nextPageToken, files(id, name, mimeType)").execute()
+
+    while listar:
+        ids_carpetas,ids_archivos = separador_archivos_carpetas(archivos)
+        imprimir_carpetas(ids_carpetas)
+
+        decision,carpetas = verificador_de_carpetas(ids_carpetas)
+        
+        if decision == "a":
+            carpeta = input("Introduci el numero de la carpeta: ")
+            carpeta = conversor_int(carpeta)
+            id_carpeta = ids_carpetas[carpeta-1][0]
+            archivos = drive_service.files().list(q= f"'{id_carpeta}' in parents",fields="nextPageToken, files(id, name, mimeType)").execute()
+        elif decision == "b":
+            id_carpeta = obtener_id_carpeta(ids_carpetas)
+            listar = False
+        else:
+            print("\nUsted eligió vover al menu principal.\n")
+            listar = False
+    return id_carpeta
 
 def conversor_int(numero:str) -> int:
     """ 
@@ -202,7 +229,7 @@ def conversor_int(numero:str) -> int:
             numero = input("El valor ingresado no es un numero, por favor intente nuevamente: ")
     return numero
 
-def obtener_ids(carpeta:bool,ids_archivos:list,ids_carpetas:list) -> None:
+def obtener_ids(carpeta:bool,ids_archivos:list,ids_carpetas:list) -> str:
     """ 
     Pre: Recibe las listas de archivos y el booleano carpeta.
     Post: Le pregunta al usuario que id quiere obtener (en caso de que no haya carpetas asume que es de archivos) y lo imprime.
@@ -217,9 +244,18 @@ def obtener_ids(carpeta:bool,ids_archivos:list,ids_carpetas:list) -> None:
         num_archivo = conversor_int(num_archivo)
         print(f"\nEl id del archivo {num_archivo} es: {ids_archivos[num_archivo-1][0]}")
     else:
-        num_carpeta = input("\nIngrese el numero de carpeta que desea obtener el id: ")
-        num_carpeta = conversor_int(num_carpeta)
-        print(f"\nEl id de la carpeta {num_carpeta} es: {ids_carpetas[num_carpeta-1][0]}")
+        id_carpeta = obtener_id_carpeta(ids_carpetas)
+
+def obtener_id_carpeta(ids_carpetas:list) -> str:
+    """ 
+    Pre: Recibe las listas de carpetas.
+    Post: Le pregunta al usuario que id quiere obtener y lo imprime.
+    """
+    num_carpeta = input("\nIngrese el numero de carpeta que desea obtener el id: ")
+    num_carpeta = conversor_int(num_carpeta)
+    print(f"\nEl id de la carpeta {num_carpeta} es: {ids_carpetas[num_carpeta-1][0]}")
+
+    return ids_carpetas[num_carpeta-1][0]
 
 def separador_archivos_carpetas(archivos:dict)-> list:
     """ 
@@ -274,7 +310,7 @@ def imprimir_archivos(ids_archivos:list)-> None:
         numero += 1
         print(f'\nArchivo Nº {numero}: {ids_archivos[numero-1][1]}')
 
-def crear_carpeta_drive(drive_service:Resource,nombre_carpeta:str)-> None: #corrregir
+def crear_carpeta_drive(drive_service:Resource,nombre_carpeta:str)-> None: 
     """ 
     Pre: Recibe el servicio de drive.
     Post: Crea una carpeta en google drive y la almacena donde quiera el usuario.
@@ -284,17 +320,21 @@ def crear_carpeta_drive(drive_service:Resource,nombre_carpeta:str)-> None: #corr
     'mimeType': 'application/vnd.google-apps.folder'
     }
 
-    file = drive_service.files().create(body=file_metadata,
-                                    fields='id').execute()
-    file_id = file.get('id')
-
     ubicacion = input("\nDesea almacenar esta carpeta en su unidad principal? (si/no): ")
 
     if ubicacion == "no":
-        folder_id = input("\nPor favor introduzca el id de la carpeta: ") #ver de listar archivos o buscar la carpeta para obtener el id.
+        print("\nA continuacion le daremos la opcion de navegar entre las carpetas y al llegar a la carpeta en la cual quiere almacenar la carpeta a crear,\npor favor solicite el id.\n")
+        folder_id = navegacion_carpetas_drive(drive_service) 
+
+        file = drive_service.files().create(body=file_metadata,fields='id').execute()
+        file_id = file.get('id')
+
         mover_archivos_drive(drive_service,file_id,folder_id)
         print("\nSu carpeta fue creada con exito.\n")
     else:
+        file = drive_service.files().create(body=file_metadata,fields='id').execute()
+        file_id = file.get('id')
+
         print("\nVamos a almacenarla en tu unidad principal.\n")
 
     print('\nFolder ID: %s\n' % file_id)
@@ -334,7 +374,7 @@ def subir_archivo_drive(drive_service:Resource,file_name:str,folder_id:str,file_
     mover_archivos_drive(drive_service,file_id,folder_id)
     print('\nID del archivo: %s\n' % file_id)
 
-def descargar_archivo_drive(drive_service:Resource,file_id:str,file_name:str,file_path:str) -> None: #falla si la ruta esta vacia
+def descargar_archivo_drive(drive_service:Resource,file_id:str,file_name:str,file_path:str) -> None: #falla si la ruta esta vacia. Ver de hacer una funcion psara navegar por los archivos locales y que me devuelva el path
     """
     Pre: Recibo el servico de google drive API, el nombre del archivo, su ID y la carpeta en la cual lo quiere descargar.
     Post: Descarga el archivo solicitado por el usuario.
@@ -548,7 +588,6 @@ def sincronizacion_drive(drive_service:Resource)-> None:  #chequear q funcionen 
 
     crear_carpeta_temporal(drive_service,segundo_filtro_local,segundo_filtro_drive,carpeta_local,carpeta_drive)
     print("\nSincronizacion exitosa!\n")
-
 # >>>>>>> 2bea9ae4774dabd5b3b7a535c64ba2836e41b0a5
 def validar_mail_evaluacion() -> None:
     # Verificar que los datos de los alumnos sean correctos
