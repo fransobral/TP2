@@ -186,6 +186,35 @@ def listar_archivos_drive(drive_service:Resource)-> None:
             print("\nUsted eligio vover al menu principal.\n")
             listar = False
 
+def listar_archivos_local() -> None:    # Hacer que pueda elejir si es local o drive.
+    """ 
+    Pre:
+    Post: Printea los archivos de la capeta especificada por el usuario.
+    """
+    lista_de_archivos = os.listdir(os.path.abspath(os.getcwd()))
+
+    print(lista_de_archivos)
+
+def crear_carpeta_local() -> None:       # Hacer que pueda elejir si es local o drive.
+
+    try:
+        carpeta_nueva = os.mkdir(input('Ingrese el nombre de la nueva carpeta: '))
+    except OSError:
+        print('Error creando el archivo.')
+    else:
+        print('Creaste la carpeta .')
+
+def crear_archivo_local(file_name) -> None:      # Ver esto
+
+    # nuevo_archivo = os.mknod(input("Ingrese el nombre del nuevo archivo con su extendion: "))
+
+    try:
+        open(file_name, 'a').close()
+    except OSError:
+        print('Error creando el archivo.')
+    else:
+        print('Archivo creado.')
+
 def conversor_int(numero:str) -> int:
     """ 
     Pre: Recibo un str.
@@ -333,7 +362,7 @@ def subir_archivo_drive(drive_service:Resource,file_name:str,folder_id:str,file_
     mover_archivos_drive(drive_service,file_id,folder_id)
     print('\nID del archivo: %s\n' % file_id)
 
-def descargar_archivo_drive(drive_service:Resource,file_id:str,file_name:str,file_path:str) -> None: 
+def descargar_archivo_drive(drive_service:Resource,file_id:str,file_name:str,file_path:str) -> None:    # Ver esto, agregar try except
     """
     Pre: Recibo el servico de google drive API, el nombre del archivo, su ID y la carpeta en la cual lo quiere descargar.
     Post: Descarga el archivo solicitado por el usuario.
@@ -547,15 +576,22 @@ def sincronizacion_drive(drive_service:Resource)-> None:
 
     crear_carpeta_temporal(drive_service,segundo_filtro_local,segundo_filtro_drive,carpeta_local,carpeta_drive)
     print("\nSincronizacion exitosa!\n")
-# >>>>>>> 2bea9ae4774dabd5b3b7a535c64ba2836e41b0a5
-def validar_mail_evaluacion() -> None:
-    # Verificar que los datos de los alumnos sean correctos
-    pass
 
-def recibir_mail_evaluacion() -> None:
-    # Recibir los datos, mandar a validarlos, en caso de ser correcto seguir, sino volver a pedir.
-    validacion = validar_mail_evaluacion()
-    mandar_mail()
+def validar_mail_evaluacion(service_gmail) -> None:
+
+    # Fijarse cual es el subject, y verificar que este como padron en el csv
+
+    validacion = False
+
+    asunto = service_gmail.users().messages().get()['payload']['headers']
+
+    with open('alumnos.csv') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for fila in csv_reader:
+            if fila[1] == asunto:
+                validacion = True 
+
+    print(asunto)
 
 def buscar_mails(service_gmail, query_string,label_ids =[]) -> None:
     try:
@@ -582,17 +618,19 @@ def buscar_mails(service_gmail, query_string,label_ids =[]) -> None:
     except Exception as e:
         return None
 
-def mandar_mail(sender, to, subject, message_text, validacion) -> None:
+def mandar_mail(sender, to, subject, message_text, validacion, service_gmail) -> None:  #Agregar el to y el from del mail del alumno, conseguir el id
+
     if validacion == True:
         message = "Tu entrega esta correcta."
         mime_message = MIMEMultipart()
-        mime_message['to'] = "ipasman@fi.uba.ar"
-        mime_message['from'] = "algoritmos1costa@gmail.com"
+        mime_message['to'] = service_gmail.users().messages().get(user_id = "", id = "")['payload']['headers']
+        mime_message['from'] = service_gmail.users().messages().get(user_id = "", id = "")['payload']['headers']
         mime_message['subject'] = "Entrega Evaluacion"
         mime_message.attach(MIMEText(message, "plain"))
         raw_string = base64.urlsafe_b64encode(mime_message.as_string())
 
         message = service_gmail.users().messages().send(userId = "yo", body = {"raw": raw_string}).execute()
+
     else:
         message = "Tu entrega esta incorrecta, por favor revisar y enviar datos correctamente."
         mime_message = MIMEMultipart()
@@ -604,7 +642,6 @@ def mandar_mail(sender, to, subject, message_text, validacion) -> None:
 
         message = service_gmail.users().messages().send(userId = "yo", body = {"raw": raw_string}).execute()
         
-
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
     gmail_service = service_gmail.obtener_servicio() #este es el servicio de gmail
