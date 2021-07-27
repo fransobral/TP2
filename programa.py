@@ -134,7 +134,7 @@ def verificador_numero(numero:str) -> int:
             numero = input("Eso no es un numero, por favor vuelva a intentarlo: ")
     return numero
 
-def eleccion_crear_archivo_o_carpeta(drive_service:Resource) -> None:
+def eleccion_crear_archivo_o_carpeta(drive_service:Resource, file_name:str, folder_id:str, nombre_carpeta:str) -> None:
     """ 
     Pre: Recibe el servicoi de google drive.
     Post: El usuario elige que opcion quiere y se ejecuta la funcion correspondiente a esa accion.
@@ -207,7 +207,7 @@ def crear_carpeta_local() -> None:
     else:
         print('Creaste la carpeta .')
 
-def crear_archivo_local(file_name) -> None:      # Ver esto
+def crear_archivo_local(file_name:str) -> None:      # Ver esto
 
     # nuevo_archivo = os.mknod(input("Ingrese el nombre del nuevo archivo con su extendion: "))
 
