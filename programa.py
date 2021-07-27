@@ -134,7 +134,11 @@ def verificador_numero(numero:str) -> int:
             numero = input("Eso no es un numero, por favor vuelva a intentarlo: ")
     return numero
 
+<<<<<<< HEAD
 def eleccion_crear_archivo_o_carpeta(drive_service:Resource, file_name:str, folder_id:str, nombre_carpeta:str) -> None:
+=======
+def eleccion_crear_archivo_o_carpeta(drive_service:Resource) -> None:
+>>>>>>> parent of bc6983d... Arregle una confusion con el git.
     """ 
     Pre: Recibe el servicoi de google drive.
     Post: El usuario elige que opcion quiere y se ejecuta la funcion correspondiente a esa accion.
@@ -158,7 +162,10 @@ def eleccion_crear_archivo_o_carpeta(drive_service:Resource, file_name:str, fold
             file_name = input("\nIngrese el nombre con la extension del archivo a crear: ")
             folder_id = input("\nIngrese el id de la carpeta en la cual se va a almacenar: ")
             crear_archivo_drive(drive_service,file_name,folder_id)
+<<<<<<< HEAD
             crear_archivo_local(file_name)
+=======
+>>>>>>> parent of bc6983d... Arregle una confusion con el git.
             repeticion = input("Desea crear otro archivo? (si/no) ")
             if repeticion != "si":
                 decision = repeticion
@@ -207,7 +214,11 @@ def crear_carpeta_local() -> None:
     else:
         print('Creaste la carpeta .')
 
+<<<<<<< HEAD
 def crear_archivo_local(file_name:str) -> None:      # Ver esto
+=======
+def crear_archivo_local(file_name) -> None:      # Ver esto
+>>>>>>> parent of bc6983d... Arregle una confusion con el git.
 
     # nuevo_archivo = os.mknod(input("Ingrese el nombre del nuevo archivo con su extendion: "))
 
@@ -217,7 +228,10 @@ def crear_archivo_local(file_name:str) -> None:      # Ver esto
         print('Error creando el archivo.')
     else:
         print('Archivo creado.')
+<<<<<<< HEAD
         
+=======
+>>>>>>> parent of bc6983d... Arregle una confusion con el git.
 def navegacion_carpetas_drive(drive_service:Resource) -> str:
     """ 
     Pre: Recibe lo servicios de google drive.
@@ -685,7 +699,15 @@ def mandar_mail(sender, to, subject, message_text, validacion, service_gmail) ->
         raw_string = base64.urlsafe_b64encode(mime_message.as_string())
 
         message = service_gmail.users().messages().send(userId = "yo", body = {"raw": raw_string}).execute()
-        
+      
+os.system("mkdir /escritorio/Evaluaciones")
+if not.os.path.isdir(ruta_Evaluaciones + docente):
+    os.mkdir(ruta_Evaluaciones + docente)
+if not os.mkdir(Evaluaciones + docentes + alumnos):
+    os.mkdir(Evaluaciones + docentes + alumnos)
+    
+shutil.move("ruta_del_zip/archivos","Evaluaciones/docentes/alumnos/archivos")
+               
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
     gmail_service = service_gmail.obtener_servicio() #este es el servicio de gmail
