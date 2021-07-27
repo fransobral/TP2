@@ -199,18 +199,25 @@ def listar_archivos_local() -> None:
 
     print(lista_de_archivos)
 
-def crear_carpeta_local() -> None: #chequear Ichi
+def crear_carpeta_local(nombre_carpeta:str, file_path:str) -> None: 
+    """ 
+    Pre: Recibe el nombre de la carpeta y el path.
+    Post: Crea la carpeta en el directorio que el usuario elige.
+    """
     try:
-        carpeta_nueva = os.mkdir(input('Ingrese el nombre de la nueva carpeta: ')) #ver de pasar como parametro y hacer la pregunta afuera
+        carpeta_nueva = os.mkdir(nombre_carpeta) 
     except OSError:
         print('Error creando el archivo.')
     else:
-        path = input("Donde desea almacenar la carpeta?: ") #ver de pasar como parametro y hacer la pregunta afuera
+        path = file_path 
         shutil.move(carpeta_nueva, path)
         print('Creaste la carpeta .')
     
-def crear_archivo_local(file_name) -> None: # Ver esto
-
+def crear_archivo_local(file_name:str) -> None: # Ver esto
+    """ 
+    Pre: Recibe el nombre del archivo.
+    Post: Crea un archivo.
+    """
     # nuevo_archivo = os.mknod(input("Ingrese el nombre del nuevo archivo con su extendion: "))
 
     try:
@@ -612,8 +619,11 @@ def sincronizacion_drive(drive_service:Resource)-> None:  #chequear q funcionen 
     crear_carpeta_temporal(drive_service,segundo_filtro_local,segundo_filtro_drive,carpeta_local,carpeta_drive)
     print("\nSincronizacion exitosa!\n")
 
-def validar_mail_evaluacion(service_gmail) -> None:
-
+def validar_mail_evaluacion(service_gmail:Resource) -> None:
+    """ 
+    Pre: Recibe el servicio de Gmail.
+    Post: Validar que el subject del mail (padron) este en el archivo csv.
+    """
     # Fijarse cual es el subject, y verificar que este como padron en el csv
 
     validacion = False
@@ -628,7 +638,12 @@ def validar_mail_evaluacion(service_gmail) -> None:
 
     print(asunto)
 
-def buscar_mails(service_gmail, query_string,label_ids =[]) -> None:
+def buscar_mails(service_gmail:Resource, query_string:str, label_ids =[]) -> None:
+    """ 
+    Pre: 
+    Post: 
+    """
+
     try:
         message_list_response = service_gmail.users().messages().list(
             userId = 'yo',
@@ -653,8 +668,11 @@ def buscar_mails(service_gmail, query_string,label_ids =[]) -> None:
     except Exception as e:
         return None
 
-def mandar_mail(sender, to, subject, message_text, validacion, service_gmail) -> None:  #Agregar el to y el from del mail del alumno, conseguir el id
-
+def mandar_mail(sender:str, to:str, subject:str, message_text:str, validacion:bool, service_gmail:Resource) -> None:  #Agregar el to y el from del mail del alumno, conseguir el id
+    """ 
+    Pre: Recibe los datos del usuario que mando un mail.
+    Post: Envia un mail avisando si la entrega fue correcta o no.
+    """
     if validacion == True:
         message = "Tu entrega esta correcta."
         mime_message = MIMEMultipart()
