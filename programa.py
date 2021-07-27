@@ -676,7 +676,15 @@ def mandar_mail(sender, to, subject, message_text, validacion, service_gmail) ->
         raw_string = base64.urlsafe_b64encode(mime_message.as_string())
 
         message = service_gmail.users().messages().send(userId = "yo", body = {"raw": raw_string}).execute()
-        
+      
+os.system("mkdir /escritorio/Evaluaciones")
+if not.os.path.isdir(ruta_Evaluaciones + docente):
+    os.mkdir(ruta_Evaluaciones + docente)
+if not os.mkdir(Evaluaciones + docentes + alumnos):
+    os.mkdir(Evaluaciones + docentes + alumnos)
+    
+shutil.move("ruta_del_zip/archivos","Evaluaciones/docentes/alumnos/archivos")
+               
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
     print("\nHola! Bienvenidos a nuestro servicio de google drive y gmail.\n")
