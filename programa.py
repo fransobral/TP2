@@ -31,7 +31,8 @@ def verificador_decision(decision:str)-> tuple:
     Pre: Recibe si el usuario decidio continuar o no.
     Post: Retorna una variable que define si continua o no en base a lo que haya elegiddo el usuario.
     """
-    if decision != "si":
+    correcta_eleccion = True
+    if decision != "si" and decision != "Si":
         correcta_eleccion = False
         print("\nMuy bien, que desea hacer a continuacion?\n")
     return correcta_eleccion
@@ -111,7 +112,7 @@ def menu(drive_service:Resource) -> None:
         1. Listar archivos de la carpeta actual.
         2. Crear un archivo/carpeta.
         3. Subir un archivo.
-        4. Descragar un archivo.
+        4. Descargar un archivo.
         5. Sincronizar.
         6. Generar carpetas de una evaluacion.
         7. Actualizar entregas de alumnos via mail.
@@ -133,40 +134,42 @@ def verificador_numero(numero:str) -> int:
             numero = input("Eso no es un numero, por favor vuelva a intentarlo: ")
     return numero
 
-def eleccion_crear_archivo_o_carpeta(drive_service:Resource) -> None:
+def eleccion_crear_archivo_o_carpeta(drive_service:Resource) -> None: #ver comentarios Ichi
     """ 
     Pre: Recibe el servicoi de google drive.
     Post: El usuario elige que opcion quiere y se ejecuta la funcion correspondiente a esa accion.
     """
-    decision = input("a)Crear una carpeta\nb)Crear un archivo.\nQue desea hacer?: ")
+    decision = input("a)Crear un archivo.\nb)Crear una carpeta.\nQue desea hacer?: ")
 
     while decision != "a" and decision != "b":
         print("\nEsa opcion no es valida, por favor intente nuevamente.\n")
-        decision = input("a)Crear una carpeta\nb)Crear un archivo.\nQue desea hacer?: ")
+        decision = input("a)Crear un archivo.\nb)Crear una carpeta.\nQue desea hacer?: ")
     confirmacion = input(f"Usted eligio la opcion '{decision}', esta seguro que desea continuar? (si/no): ")
 
     if confirmacion == "si" or confirmacion == "Si":
-        while decision == "a":
+        while decision == "b":
             nombre_carpeta = input("\nPor favor ingrese el nombre de la carpeta a crear: ")
             crear_carpeta_drive(drive_service,nombre_carpeta)
             repeticion = input("Desea crear otra carpeta? (si/no) ")
             if repeticion != "si":
                 decision = repeticion
-        if decision == "b":
+        while decision == "a":
             file_name = input("\nIngrese el nombre con la extension del archivo a crear: ")
-            folder_id = input("\nIngrese el id de la carpeta en la cual se va a almacenar: ")
-            crear_archivo_drive(drive_service,file_name,folder_id)
+            file_path = input("\nIngrese el directorio donde se va a almacenar el archivo creado: ")
+            folder_id = input("\nIngrese el id de la carpeta en la cual se va a almacenar en el drive: ")
+            #aca habria que ejecutar la funcion de crear un archivo local (ya le pedi el nombre y la ruta en la cual se va a almacenar el archivo localmente)
+            subir_archivo_drive(drive_service,file_name,folder_id,file_path)
             repeticion = input("Desea crear otro archivo? (si/no) ")
             if repeticion != "si":
                 decision = repeticion
     
-def listar_archivos_drive(drive_service:Resource)-> None: #no esta mostrando todos los archivos, solo muestra los mas recientes y los compartidos conmigo
+def listar_archivos_drive(drive_service:Resource)-> None:
     """ 
     Pre: Recibe lo servicios de google drive.
     Post: Printea los archivos de la capeta especificada por el usuario.
     """
     listar = True
-    archivos = drive_service.files().list(fields="nextPageToken, files(id, name, mimeType)").execute()
+    archivos = drive_service.files().list(q= f"'Root' in parents",fields="nextPageToken, files(id, name, mimeType)").execute()
 
     while listar:
         ids_carpetas,ids_archivos = separador_archivos_carpetas(archivos)
@@ -196,15 +199,17 @@ def listar_archivos_local() -> None:
 
     print(lista_de_archivos)
 
-def crear_carpeta_local() -> None:
+def crear_carpeta_local() -> None: #chequear Ichi
     try:
-        carpeta_nueva = os.mkdir(input('Ingrese el nombre de la nueva carpeta: '))
+        carpeta_nueva = os.mkdir(input('Ingrese el nombre de la nueva carpeta: ')) #ver de pasar como parametro y hacer la pregunta afuera
     except OSError:
         print('Error creando el archivo.')
     else:
+        path = input("Donde desea almacenar la carpeta?: ") #ver de pasar como parametro y hacer la pregunta afuera
+        shutil.move(carpeta_nueva, path)
         print('Creaste la carpeta .')
-
-def crear_archivo_local(file_name) -> None:      # Ver esto
+    
+def crear_archivo_local(file_name) -> None: # Ver esto
 
     # nuevo_archivo = os.mknod(input("Ingrese el nombre del nuevo archivo con su extendion: "))
 
@@ -214,6 +219,7 @@ def crear_archivo_local(file_name) -> None:      # Ver esto
         print('Error creando el archivo.')
     else:
         print('Archivo creado.')
+
 def navegacion_carpetas_drive(drive_service:Resource) -> str:
     """ 
     Pre: Recibe lo servicios de google drive.
@@ -366,24 +372,6 @@ def crear_carpeta_drive(drive_service:Resource,nombre_carpeta:str)-> None:
 
     print('\nFolder ID: %s\n' % file_id)
 
-def crear_archivo_drive(drive_service:Resource,file_name:str,folder_id:str)-> None: #corregir
-    """ 
-    Pre: Recibe el servicio de drive, el nombre y la carpeta del archivo a almacenar.
-    Post: Crea un archivo en la carpaeta que selecciono el usuario.
-    """
-
-    file_metadata = {
-        'name': file_name,
-        'parents': [folder_id]
-    }
-    media = MediaFileUpload(f'files/{file_name}', #ver xq se rompe depende donde se corra
-                            resumable=True)
-    file = drive_service.files().create(body=file_metadata,
-                                        media_body=media,
-                                        fields='id').execute()
-
-    print('ID del archivo: %s' % file.get('id'))
-
 def subir_archivo_drive(drive_service:Resource,file_name:str,folder_id:str,file_path:str) -> None: 
     """ 
     Pre: Recibe los servicios de google drive, el n ombre del archivo y el id de la carpeta.
@@ -401,26 +389,33 @@ def subir_archivo_drive(drive_service:Resource,file_name:str,folder_id:str,file_
     mover_archivos_drive(drive_service,file_id,folder_id)
     print('\nID del archivo: %s\n' % file_id)
 
-def descargar_archivo_drive(drive_service:Resource,file_id:str,file_name:str,file_path:str) -> None: #falla si la ruta esta vacia. Ver de hacer una funcion psara navegar por los archivos locales y que me devuelva el path
+def descargar_archivo_drive(drive_service:Resource,file_id:str,file_name:str,file_path:str) -> None: #funcion para navegar entre archivos locales y que me devuuelva el path?
     """ 
     Pre: Recibo el servico de google drive API, el nombre del archivo, su ID y la carpeta en la cual lo quiere descargar.
     Post: Descarga el archivo solicitado por el usuario.
     """
-    # Agregar try y except
-    request = drive_service.files().get_media(fileId=file_id)
-    fh = io.BytesIO()
-    downloader = MediaIoBaseDownload(fh, request)
-    done = False
+    #falta agregar un except googleapiclient.errors.HttpError q le pregunte a ramiro como es.
+    try:
+        request = drive_service.files().get_media(fileId=file_id)
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
 
-    while done is False:
-        status, done = downloader.next_chunk()
-        print("Descarga %d%%." % int(status.progress() * 100))
+        while done is False:
+            status, done = downloader.next_chunk()
+            print("Descarga %d%%." % int(status.progress() * 100))
 
-    with io.open(file_name,'wb') as f:
-        fh.seek(0)
-        f.write(fh.read())
-    
-    shutil.move(file_name, file_path) #mueve el archivo descargado al directorio que pidio el usuario
+        with io.open(file_name,'wb') as f:
+            fh.seek(0)
+            f.write(fh.read())
+
+        shutil.move(file_name, file_path) #mueve el archivo descargado al directorio que pidio el usuario
+    except PermissionError:
+        print("\nNo tienes los permisos necesarios para acceder a esa carpeta. Intente nuevamente.\n")
+    except shutil.Error:
+        print("\nEl archivo que esta intentando descargar ya se encuentra en este directorio. Por favor intente nuevamente.\n")
+    except FileNotFoundError:
+        print("\nLa carpeta en la cual quiere almacenar el archivo no exsiste.\n") #ver de crear sola la carpeta 
 
 def buscar_archivos_drive(drive_service:Resource,palabra_buscador:str) -> None:
     """ 
@@ -438,7 +433,7 @@ def buscar_archivos_drive(drive_service:Resource,palabra_buscador:str) -> None:
         for item in items:
             print(f"{item['name']} ({item['id']})")
 
-def mover_archivos_drive(drive_service:Resource,file_id:str,folder_id:str) -> None: 
+def mover_archivos_drive(drive_service:Resource,file_id:str,folder_id:str) -> None: #agregar except q no exsista algun directorio
     """ 
     Pre: Recibe el Id del archivo a mover y el Id de la carpeta a la cual quiere mover el archivo.
     Post: Mueve el archivo hacia la carpeta elegida por el usuario.
@@ -453,7 +448,7 @@ def mover_archivos_drive(drive_service:Resource,file_id:str,folder_id:str) -> No
                                         removeParents=previous_parents,
                                         fields='id, parents').execute()
 
-def escanear_archivos_locales(carpeta_local:str)-> list:
+def escanear_archivos_locales(carpeta_local:str)-> list: #Ichi. except q no exsista el directorio (ver si podes crear la carpeta esa q no exsiste. sino simplemente deja el error aaclarado con un except)
     """ 
     Pre: Recibo una carpeta local.
     Post Creo una lista con el contenido de esa carpeta seleccionando un par de caracteristicas.
@@ -482,7 +477,7 @@ def escanear_archivos_drive(drive_service:Resource,carpeta_drive:str)-> list:
 def buscar_exsistencia_archivo(file_path:str,file_name:str)-> bool:
     """ 
     Pre: Le doy el file path y el nombre del archivo.
-    Post Verifica si el archivo exsiste o no.
+    Post: Verifica si el archivo exsiste o no.
     """
     filePath = f"{file_path}/{file_name}"
     try:
@@ -681,18 +676,9 @@ def mandar_mail(sender, to, subject, message_text, validacion, service_gmail) ->
         raw_string = base64.urlsafe_b64encode(mime_message.as_string())
 
         message = service_gmail.users().messages().send(userId = "yo", body = {"raw": raw_string}).execute()
-      
-os.system("mkdir /escritorio/Evaluaciones")
-if not.os.path.isdir(ruta_Evaluaciones + docente):
-    os.mkdir(ruta_Evaluaciones + docente)
-if not os.mkdir(Evaluaciones + docentes + alumnos):
-    os.mkdir(Evaluaciones + docentes + alumnos)
-    
-shutil.move("ruta_del_zip/archivos","Evaluaciones/docentes/alumnos/archivos")
-               
+        
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
-    gmail_service = service_gmail.obtener_servicio() #este es el servicio de gmail
     print("\nHola! Bienvenidos a nuestro servicio de google drive y gmail.\n")
     menu(drive_service)
     print("Muchas gracias por utilizar nuestro programa!")
