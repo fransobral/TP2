@@ -47,6 +47,7 @@ def elecciones(eleccion:int,drive_service:Resource) -> str: #modularizarr
         correcta_eleccion = verificacion_eleccion(1)
         if correcta_eleccion:
             listar_archivos_drive(drive_service)
+            listar_archivos_local()
             print("\nMuy bien, que desea hacer a continuacion?\n")
     elif eleccion == 2:
         correcta_eleccion = verificacion_eleccion(2)  
@@ -149,6 +150,7 @@ def eleccion_crear_archivo_o_carpeta(drive_service:Resource) -> None:
         while decision == "a":
             nombre_carpeta = input("\nPor favor ingrese el nombre de la carpeta a crear: ")
             crear_carpeta_drive(drive_service,nombre_carpeta)
+            crear_carpeta_local()
             repeticion = input("Desea crear otra carpeta? (si/no) ")
             if repeticion != "si":
                 decision = repeticion
@@ -156,6 +158,7 @@ def eleccion_crear_archivo_o_carpeta(drive_service:Resource) -> None:
             file_name = input("\nIngrese el nombre con la extension del archivo a crear: ")
             folder_id = input("\nIngrese el id de la carpeta en la cual se va a almacenar: ")
             crear_archivo_drive(drive_service,file_name,folder_id)
+            crear_archivo_local(file_name)
             repeticion = input("Desea crear otro archivo? (si/no) ")
             if repeticion != "si":
                 decision = repeticion
@@ -214,6 +217,7 @@ def crear_archivo_local(file_name) -> None:      # Ver esto
         print('Error creando el archivo.')
     else:
         print('Archivo creado.')
+        
 def navegacion_carpetas_drive(drive_service:Resource) -> str:
     """ 
     Pre: Recibe lo servicios de google drive.
