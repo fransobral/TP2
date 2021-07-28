@@ -617,25 +617,29 @@ def sincronizacion_drive(drive_service:Resource)-> None:  #chequear q funcionen 
 
     while not os.path.exists(carpeta_local):
         carpeta_local = input("Ese diectorio no existe, por favor ingreselo nuevamente: ")
-    #try:
-    primer_filtro_local = escanear_archivos_locales(carpeta_local)
-    primer_filtro_drive = escanear_archivos_drive(drive_service,carpeta_drive)
+    try:
+        primer_filtro_local = escanear_archivos_locales(carpeta_local)
+        primer_filtro_drive = escanear_archivos_drive(drive_service,carpeta_drive)
 
-    comparacion_carpetas(drive_service,primer_filtro_local,primer_filtro_drive,carpeta_local,carpeta_drive)
+        comparacion_carpetas(drive_service,primer_filtro_local,primer_filtro_drive,carpeta_local,carpeta_drive)
 
-    primer_filtro_local = escanear_archivos_locales(carpeta_local) #vuelvo a ejecutar estas funciones ya que pueden haber sufrido modificaciones.
-    primer_filtro_drive = escanear_archivos_drive(drive_service,carpeta_drive)
-    
-    contador = 0
-    
-    for i in primer_filtro_local:
-        archivo_local = primer_filtro_local[contador][0]
-        print(f"\nEl archivo {archivo_local} tiene modificaciones y sera subido a la nube.")
-        subir_archivo_drive(drive_service,archivo_local,carpeta_drive,carpeta_local)
-        drive_service.files().delete(fileId=primer_filtro_drive[contador][3]).execute() #elimina el archivo viejo
-        contador += 1
+        primer_filtro_local = escanear_archivos_locales(carpeta_local) #vuelvo a ejecutar estas funciones ya que pueden haber sufrido modificaciones.
+        primer_filtro_drive = escanear_archivos_drive(drive_service,carpeta_drive)
+        
+        contador = 0
+        
+        for i in primer_filtro_local:
+            archivo_local = primer_filtro_local[contador][0]
+            print(f"\nEl archivo {archivo_local} tiene modificaciones.")
+            subir_archivo_drive(drive_service,archivo_local,carpeta_drive,carpeta_local)
+            drive_service.files().delete(fileId=primer_filtro_drive[contador][3]).execute() #elimina el archivo viejo
+            contador += 1
 
-    print("\nSincronizacion exitosa!\n")
+        print("\nSincronizacion exitosa!\n")
+    except FileNotFoundError:
+        print("\nLa carpeta elegida no exsiste, por favor vuelva a intentarlo.\n")
+    except:
+        print("\nSu id de drive es inexsistente, por favor intente nuevamente\n.")
 
 def validar_mail_evaluacion(service_gmail:Resource) -> None:
     """ 
@@ -785,4 +789,4 @@ def main()-> None:
     print("\nMuchas gracias por utilizar nuestro programa!\n")
 
 if __name__ == '__main__':
-    escanear_archivos_locales("oldf") 
+    main()
