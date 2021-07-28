@@ -134,7 +134,7 @@ def verificador_numero(numero:str) -> int:
             numero = input("Eso no es un numero, por favor vuelva a intentarlo: ")
     return numero
 
-def eleccion_crear_archivo_o_carpeta(drive_service:Resource) -> None: #ver comentarios Ichi
+def eleccion_crear_archivo_o_carpeta(drive_service:Resource) -> None:
     """ 
     Pre: Recibe el servicoi de google drive.
     Post: El usuario elige que opcion quiere y se ejecuta la funcion correspondiente a esa accion.
@@ -621,7 +621,7 @@ def sincronizacion_drive(drive_service:Resource)-> None:  #chequear q funcionen 
     crear_carpeta_temporal(drive_service,segundo_filtro_local,segundo_filtro_drive,carpeta_local,carpeta_drive)
     print("\nSincronizacion exitosa!\n")
 
-def validar_mail_evaluacion(service_gmail:Resource) -> None:
+def validar_mail_evaluacion(service_gmail:Resource, message_list_response) -> None:
     """ 
     Pre: Recibe el servicio de Gmail.
     Post: Validar que el subject del mail (padron) este en el archivo csv.
@@ -629,8 +629,12 @@ def validar_mail_evaluacion(service_gmail:Resource) -> None:
     # Fijarse cual es el subject, y verificar que este como padron en el csv
 
     validacion = False
-
-    asunto = service_gmail.users().messages().get()['payload']['headers']
+    asunto = service_gmail.users().messages().get(userId = 'me', id = message_list_response)['payload']['headers'].execute()
+    # (pasman isidro, 108116)
+    # for i in asunto:
+    #     i[1]
+    # informacion[i] = {}
+    asunto2 = asunto['payload']['headers'].execute()
 
     with open('alumnos.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
@@ -660,7 +664,7 @@ def buscar_mails(service_gmail:Resource, query_string:str, label_ids =[]) -> Non
             message_list_response = service_gmail.users().messages().list(
                 userId = 'yo',
                 labelIds = label_ids,
-                q = query_string,
+                q = query_string,   
                 pageToken = nextPageToken
             ).execute()
 
