@@ -76,10 +76,8 @@ def elecciones(eleccion:int,drive_service:Resource) -> str: #modularizarr
         correcta_eleccion = verificacion_eleccion(5)
         while correcta_eleccion:
             sincronizacion_drive(drive_service)
-            decision = input("Desea sincroniizar algo mas?: (si/no): ")
+            decision = input("Desea sincronizar algo mas?: (si/no): ")
             correcta_eleccion = verificador_decision(decision)
-            pass
-        pass
     elif eleccion == 6:
         correcta_eleccion = verificacion_eleccion(6)
         while correcta_eleccion:
@@ -221,7 +219,11 @@ def crear_archivo_local(file_name:str) -> None: # Ver esto
     Post: Crea un archivo.
     """
     # nuevo_archivo = os.mknod(input("Ingrese el nombre del nuevo archivo con su extendion: "))
-
+    filename = file_name[-4:]
+    while filename != ".txt" and filename != ".csv" and filename != "json":
+        print("\nLa extension del archivo no esta permitida. Los formatos permitidos son .txt, .json o .csv.\n")
+        file_name = input("\nIngrese el nombre del archivo junto su extension: ")
+        filename = file_name[-4:] 
     try:
         open(file_name, 'a').close()
     except OSError:
@@ -352,58 +354,62 @@ def imprimir_archivos(ids_archivos:list)-> None:
         numero += 1
         print(f'\nArchivo Nº {numero}: {ids_archivos[numero-1][1]}')
 
-def crear_carpeta_drive(drive_service:Resource,nombre_carpeta:str)-> None: 
+def crear_carpeta_drive(drive_service:Resource,nombre_carpeta:str)-> None: #chequear q este ok el try except
     """ 
     Pre: Recibe el servicio de drive.
     Post: Crea una carpeta en google drive y la almacena donde quiera el usuario.
     """
-    file_metadata = {
-    'name': nombre_carpeta,
-    'mimeType': 'application/vnd.google-apps.folder'
-    }
+    try:
+        file_metadata = {
+        'name': nombre_carpeta,
+        'mimeType': 'application/vnd.google-apps.folder'
+        }
 
-    ubicacion = input("\nDesea almacenar esta carpeta en su unidad principal? (si/no): ")
+        ubicacion = input("\nDesea almacenar esta carpeta en su unidad principal? (si/no): ")
 
-    if ubicacion == "no":
-        print("\nA continuacion le daremos la opcion de navegar entre las carpetas y al llegar a la carpeta en la cual quiere almacenar la carpeta a crear,\npor favor solicite el id.\n")
-        folder_id = navegacion_carpetas_drive(drive_service) 
+        if ubicacion == "no":
+            print("\nA continuacion le daremos la opcion de navegar entre las carpetas y al llegar a la carpeta en la cual quiere almacenar la carpeta a crear,\npor favor solicite el id.\n")
+            folder_id = navegacion_carpetas_drive(drive_service) 
 
-        file = drive_service.files().create(body=file_metadata,fields='id').execute()
-        file_id = file.get('id')
+            file = drive_service.files().create(body=file_metadata,fields='id').execute()
+            file_id = file.get('id')
 
-        mover_archivos_drive(drive_service,file_id,folder_id)
-        print("\nSu carpeta fue creada con exito.\n")
-    else:
-        file = drive_service.files().create(body=file_metadata,fields='id').execute()
-        file_id = file.get('id')
+            mover_archivos_drive(drive_service,file_id,folder_id)
+            print("\nSu carpeta fue creada con exito.\n")
+        else:
+            file = drive_service.files().create(body=file_metadata,fields='id').execute()
+            file_id = file.get('id')
 
-        print("\nVamos a almacenarla en tu unidad principal.\n")
-
-    print('\nFolder ID: %s\n' % file_id)
+            print("\nVamos a almacenarla en tu unidad principal.\n")
+        print('\nFolder ID: %s\n' % file_id)
+    except:
+        print("\nLos datos ingresados no son validos, por favor intente nuevamente.\n")  
 
 def subir_archivo_drive(drive_service:Resource,file_name:str,folder_id:str,file_path:str) -> None: 
     """ 
     Pre: Recibe los servicios de google drive, el n ombre del archivo y el id de la carpeta.
     Post: Recibe un archivo y lo sube a la carpeta deseada por el usuraio.
     """
+    try:
+        file_metadata = {'name': file_name} 
+        filepath = f"{file_path}/{file_name}"
+        media = MediaFileUpload(filepath)
+        file = drive_service.files().create(body=file_metadata,
+                                            media_body=media,
+                                            fields='id').execute()
+        file_id = file.get('id')
 
-    file_metadata = {'name': file_name} 
-    filepath = f"{file_path}/{file_name}"
-    media = MediaFileUpload(filepath)
-    file = drive_service.files().create(body=file_metadata,
-                                        media_body=media,
-                                        fields='id').execute()
-    file_id = file.get('id')
-
-    mover_archivos_drive(drive_service,file_id,folder_id)
-    print('\nID del archivo: %s\n' % file_id)
+        mover_archivos_drive(drive_service,file_id,folder_id)
+        print('\nID del archivo: %s\n' % file_id)
+    except:
+        print("\nLos datos ingresados no son validos, por favor intente nuevamente.\n")
 
 def descargar_archivo_drive(drive_service:Resource,file_id:str,file_name:str,file_path:str) -> None: #funcion para navegar entre archivos locales y que me devuuelva el path?
     """ 
     Pre: Recibo el servico de google drive API, el nombre del archivo, su ID y la carpeta en la cual lo quiere descargar.
     Post: Descarga el archivo solicitado por el usuario.
     """
-    #falta agregar un except googleapiclient.errors.HttpError q le pregunte a ramiro como es.
+    
     try:
         request = drive_service.files().get_media(fileId=file_id)
         fh = io.BytesIO()
@@ -425,6 +431,8 @@ def descargar_archivo_drive(drive_service:Resource,file_id:str,file_name:str,fil
         print("\nEl archivo que esta intentando descargar ya se encuentra en este directorio. Por favor intente nuevamente.\n")
     except FileNotFoundError:
         print("\nLa carpeta en la cual quiere almacenar el archivo no exsiste.\n") #ver de crear sola la carpeta 
+    except:
+        print("\nLos datos ingresados no son validos, por favor intente nuevamente.\n")
 
 def buscar_archivos_drive(drive_service:Resource,palabra_buscador:str) -> None:
     """ 
@@ -442,33 +450,40 @@ def buscar_archivos_drive(drive_service:Resource,palabra_buscador:str) -> None:
         for item in items:
             print(f"{item['name']} ({item['id']})")
 
-def mover_archivos_drive(drive_service:Resource,file_id:str,folder_id:str) -> None: #agregar except q no exsista algun directorio
+def mover_archivos_drive(drive_service:Resource,file_id:str,folder_id:str) -> None:
     """ 
     Pre: Recibe el Id del archivo a mover y el Id de la carpeta a la cual quiere mover el archivo.
     Post: Mueve el archivo hacia la carpeta elegida por el usuario.
     """
-    # Retrieve the existing parents to remove
-    file = drive_service.files().get(fileId=file_id,
-                                    fields='parents').execute()
-    previous_parents = ",".join(file.get('parents'))
-    # Move the file to the new folder
-    file = drive_service.files().update(fileId=file_id,
-                                        addParents=folder_id,
-                                        removeParents=previous_parents,
-                                        fields='id, parents').execute()
+    try:
+        # Retrieve the existing parents to remove
+        file = drive_service.files().get(fileId=file_id,
+                                        fields='parents').execute()
+        previous_parents = ",".join(file.get('parents'))
+        # Move the file to the new folder
+        file = drive_service.files().update(fileId=file_id,
+                                            addParents=folder_id,
+                                            removeParents=previous_parents,
+                                            fields='id, parents').execute()
+    except:
+        print("\nLos datos ingresados no son validos, intente nuevamente.\n")
 
-def escanear_archivos_locales(carpeta_local:str)-> list: #Ichi. except q no exsista el directorio (ver si podes crear la carpeta esa q no exsiste. sino simplemente deja el error aaclarado con un except)
+def escanear_archivos_locales(carpeta_local:str)-> list: 
     """ 
     Pre: Recibo una carpeta local.
     Post Creo una lista con el contenido de esa carpeta seleccionando un par de caracteristicas.
     """
+    
     archivos_locales = list()
-    with os.scandir(carpeta_local) as ficheros: #escanea todos los archivos en determinada carpeta
-        for fichero in ficheros:
-            ultima_modifiacion = time.ctime(os.path.getmtime(fichero))
+    try:
+        with os.scandir(carpeta_local) as ficheros: #escanea todos los archivos en determinada carpeta
+            for fichero in ficheros:
+                ultima_modifiacion = time.ctime(os.path.getmtime(fichero))
 
-            lista_l = [fichero.name,ultima_modifiacion,os.path.getsize(fichero)]
-            archivos_locales.append(lista_l) #creo una lista con el nombre, el ultimo tiempo de modificacion local y su peso.
+                lista_l = [fichero.name,ultima_modifiacion,os.path.getsize(fichero)]
+                archivos_locales.append(lista_l) #creo una lista con el nombre, el ultimo tiempo de modificacion local y su peso.
+    except FileNotFoundError:
+        print("La carpeta elegida no exsiste, por favor vuelva a intentarlo.")
     return archivos_locales
 
 def escanear_archivos_drive(drive_service:Resource,carpeta_drive:str)-> list:
@@ -498,24 +513,22 @@ def buscar_exsistencia_archivo(file_path:str,file_name:str)-> bool:
         exsiste = False
     return exsiste
 
-def comparacion_carpetas(drive_service:Resource,lista_local:list,lista_drive:list,carpeta_local:str,carpeta_drive:str) -> None: #no me esta funcionando. index error, ver como sollucionar
+def comparacion_carpetas(drive_service:Resource,lista_local:list,lista_drive:list,carpeta_local:str,carpeta_drive:str) -> None: #ver como hacer para decsragar carpetas
     """ 
     Pre: Recibe la drive API, la lista local con su ruta y la del drive con su id.
     Post: Las compara y si hay diferencias, descarga o sube algun archivo.
     """
     if (len(lista_drive)) != len(lista_local): #si hay archivos q no fueron subidos, los sube y luego hace las comparaciones.
-        for archivo in lista_local:
-            if archivo[0] not in lista_drive:
-                subir_archivo_drive(drive_service,archivo[0],carpeta_drive,carpeta_local)
-        for archivo in lista_drive:
-            if archivo not in lista_local:
-                exsiste = buscar_exsistencia_archivo(carpeta_local,archivo[0])
-                if exsiste:#borra el viejo y descarga la actualizada
-                    file_path = f"{carpeta_local}/{archivo[0]}"
-                    os.remove(file_path)
-                    descargar_archivo_drive(drive_service,archivo[3],archivo[0],carpeta_local)
-                else:
-                    descargar_archivo_drive(drive_service,archivo[3],archivo[0],carpeta_local)
+        if len(lista_local) > len(lista_drive):
+            for archivo in lista_local:
+                for archivo_drivee in lista_drive:
+                    if archivo[0] != archivo_drivee[0]:
+                        subir_archivo_drive(drive_service,archivo[0],carpeta_drive,carpeta_local)
+        else:
+            for archivo_drive in lista_drive:
+                for archivo_local in lista_local:
+                    if archivo_drive[0] != archivo_local[0]:
+                        descargar_archivo_drive(drive_service,archivo_drive[3],archivo_drive[0],carpeta_local)
 
 def conversor_formato_fecha(dia_drive:str)-> str:
     """ 
@@ -540,7 +553,7 @@ def filtrar_archivos(carpeta_drive:list,carpeta_local:list) -> list:
     contador = 0
     carpeta_filtrada_local = list()
     carpeta_filtrada_drive = list()
-    for i in carpeta_drive: #veo si coinciden las fechas de modificacion y el tamaño. [1] = dia , [2] = tamaño
+    for i in range(len(carpeta_drive)): #veo si coinciden las fechas de modificacion y el tamaño. [1] = dia , [2] = tamaño
         carpeta_drive[contador][1] = conversor_formato_fecha(carpeta_drive[contador][1]) #convierto la fecha al mismo formato
         carpeta_local[contador][1] = carpeta_local[contador][1][4:] #elimino el nombre del dia que era inecesario
 
@@ -551,7 +564,7 @@ def filtrar_archivos(carpeta_drive:list,carpeta_local:list) -> list:
 
     return carpeta_filtrada_drive,carpeta_filtrada_local
 
-def analizis_linea_a_linea(carpeta_local:str,archivo_local:str,temporal:str,archivo_drive:str)-> Tuple:
+def analizis_linea_a_linea(carpeta_local:str,archivo_local:str,temporal:str,archivo_drive:str)-> Tuple: #no la uso
     """ 
     Pre: Recibe la carpeta local, el archivo local, una carpeta temporal y un archivo de drive.
     Post: Crea un archivo de texto en el cual van a estar las diferencias de linea entre los archivos a comparar.
@@ -562,12 +575,12 @@ def analizis_linea_a_linea(carpeta_local:str,archivo_local:str,temporal:str,arch
 
     difference.discard('\n')
 
-    with open('some_output_file.txt', 'w') as file_out:
+    with open('output_file.txt', 'w') as file_out:
         for line in difference:
             file_out.write(line) #crea un archivo escribiendo las diferencias.
     return file_out,file_l,file_d
 
-def crear_carpeta_temporal(drive_service:Resource,segundo_filtro_local:list,segundo_filtro_drive:list,carpeta_local:list,carpeta_drive:list):
+def crear_carpeta_temporal(drive_service:Resource,segundo_filtro_local:list,segundo_filtro_drive:list,carpeta_local:list,carpeta_drive:list): #nola borre x las dudas, pero no tiene uso
     """ 
     Pre: Recibe las listas filtradas, y las carpetas.
     Post: Crea una carpeta temporal en la cual se van a descargar los archivos de drive para ser analizados linea a linea.
@@ -582,7 +595,7 @@ def crear_carpeta_temporal(drive_service:Resource,segundo_filtro_local:list,segu
 
             file_out,file_l,file_d = analizis_linea_a_linea(carpeta_local,archivo_local,temporal,archivo_drive)
 
-            if os.stat('some_output_file.txt').st_size != 0:
+            if os.stat('output_file.txt').st_size != 0:
                 print(f"\nEl archivo {archivo_local} tiene modificaciones y sera subido a la nube.")
                 subir_archivo_drive(drive_service,archivo_local,carpeta_drive,carpeta_local)
                 drive_service.files().delete(fileId=segundo_filtro_drive[contador][3]).execute() #elimina el archivo viejo
@@ -593,20 +606,18 @@ def crear_carpeta_temporal(drive_service:Resource,segundo_filtro_local:list,segu
             file_d.close()
             contador += 1
 
-    print("\nTodo subido con exito!\n")
-
-def sincronizacion_drive(drive_service:Resource)-> None:  #chequear q funcionen bien los filtros
+def sincronizacion_drive(drive_service:Resource)-> None:  #chequear q funcionen bien los filtros. Permitir navegacion por carpetas drive y local
     """ 
     Pre: Servicio de drive API.
     Post: Sincronza los archivos locales de determinada carpeta con los de la nube de otra carpeta especificada por el usuario.
     """
-    print("\nVamos a sincronizar sus archivos! Por favor indiquenos su carpeta a sincronizar y su equivalente en el drive.\n")
+    print("\nVamos a sincronizar sus archivos! Por favor indiquenos su carpeta a sincronizar y su equivalente en el drive.\n") #"/home/fransobral/Documents/prueba"
     carpeta_local = input("\nPor favor ingrese la ruta de la carpeta local a sincronizar: ")
-    carpeta_drive = input("\nPor favor ingrese el id de la carpeta en drive a sincronizar: ")
+    carpeta_drive = input("\nPor favor ingrese el id de la carpeta en drive a sincronizar: ") # "18_khSXz0n70PQExWRJHrUygBGMS-1kOu"
 
     while not os.path.exists(carpeta_local):
         carpeta_local = input("Ese diectorio no existe, por favor ingreselo nuevamente: ")
-
+    #try:
     primer_filtro_local = escanear_archivos_locales(carpeta_local)
     primer_filtro_drive = escanear_archivos_drive(drive_service,carpeta_drive)
 
@@ -614,11 +625,16 @@ def sincronizacion_drive(drive_service:Resource)-> None:  #chequear q funcionen 
 
     primer_filtro_local = escanear_archivos_locales(carpeta_local) #vuelvo a ejecutar estas funciones ya que pueden haber sufrido modificaciones.
     primer_filtro_drive = escanear_archivos_drive(drive_service,carpeta_drive)
+    
+    contador = 0
+    
+    for i in primer_filtro_local:
+        archivo_local = primer_filtro_local[contador][0]
+        print(f"\nEl archivo {archivo_local} tiene modificaciones y sera subido a la nube.")
+        subir_archivo_drive(drive_service,archivo_local,carpeta_drive,carpeta_local)
+        drive_service.files().delete(fileId=primer_filtro_drive[contador][3]).execute() #elimina el archivo viejo
+        contador += 1
 
-    #aca van a ir los archivos que no coincidan el peso o la fecha de modificacion.
-    segundo_filtro_drive,segundo_filtro_local = filtrar_archivos(primer_filtro_drive,primer_filtro_local)
-
-    crear_carpeta_temporal(drive_service,segundo_filtro_local,segundo_filtro_drive,carpeta_local,carpeta_drive)
     print("\nSincronizacion exitosa!\n")
 
 def validar_mail_evaluacion(service_gmail:Resource) -> None:
@@ -704,14 +720,14 @@ def pedir_nombre_usuario()-> str:
     
     return nombre_usuario
 
-def carpeta_evaluaciones(usuario):
+def carpeta_evaluaciones(usuario) -> str:
     ruta = "C:/Users/" + usuario + "/Desktop/Evaluaciones"
     if not os.path.isdir(ruta):
         os.mkdir(ruta)
         
     return ruta
 
-def crear_carpeta_alumno(alumno,padron,carpeta_docente):
+def crear_carpeta_alumno(alumno,padron,carpeta_docente) -> str:
     ruta = carpeta_docente + "/" + alumno + "-" + padron
     if not os.path.isdir(ruta):
         os.mkdir(ruta)
@@ -725,7 +741,7 @@ def crear_carpeta_docente(carpeta_evaluaciones,profe):
         
     return ruta  
      
-def verificar_nombre(padron: str, matcheo: str) -> str:
+def verificar_nombre(padron:str, matcheo:str) -> str:
     alumno = "No existe"
     with open(matcheo, mode='r', newline='', encoding="UTF-8") as archivo:
         csv_reader = csv.reader(archivo, delimiter=',')
@@ -738,7 +754,7 @@ def verificar_nombre(padron: str, matcheo: str) -> str:
                 
     return alumno    
     
-def verificar_docente(nombre: str, matcheo: str) -> str:
+def verificar_docente(nombre:str, matcheo:str) -> str:
     profe = "No tiene profe"
     with open(matcheo, mode='r', newline='', encoding="UTF-8") as archivo:
         csv_reader = csv.reader(archivo, delimiter=',')
@@ -751,7 +767,7 @@ def verificar_docente(nombre: str, matcheo: str) -> str:
                 
     return profe    
 
-def sistema_carpetas(alumnos:dict):
+def sistema_carpetas(alumnos:dict): #ver que onda esto
     usuario = pedir_nombre_usuario()
     carpeta = carpeta_evaluaciones(usuario)
     archivo_alumno = "alumnos.csv"
@@ -761,8 +777,6 @@ def sistema_carpetas(alumnos:dict):
         docente = verificar_docente(nombre, archvio_alumnos_docentes)
         carpeta_docente = crear_carpeta_docente(carpeta_evaluaciones, profe)
         carpeta_alumno = crear_carpeta_alumno(alumno, padron, carpeta_docente)
-        
-sistema_carpetas()
       
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
@@ -771,4 +785,4 @@ def main()-> None:
     print("\nMuchas gracias por utilizar nuestro programa!\n")
 
 if __name__ == '__main__':
-    main() 
+    escanear_archivos_locales("oldf") 
