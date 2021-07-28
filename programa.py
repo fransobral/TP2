@@ -696,7 +696,74 @@ def mandar_mail(sender:str, to:str, subject:str, message_text:str, validacion:bo
         raw_string = base64.urlsafe_b64encode(mime_message.as_string())
 
         message = service_gmail.users().messages().send(userId = "yo", body = {"raw": raw_string}).execute()
+
+def pedir_nombre_usuario()-> str:
+    nombre_usuario = input("Ingrese nombre de usuario: ")
+    while not os.path.isdir("C:/Users/" + nombre_usuario):
+        nombre_usuario = input("Ingrese nuevamente el nombre de usuario: ")
+    
+    return nombre_usuario
+
+def carpeta_evaluaciones(usuario):
+    ruta = "C:/Users/" + usuario + "/Desktop/Evaluaciones"
+    if not os.path.isdir(ruta):
+        os.mkdir(ruta)
         
+    return ruta
+
+def crear_carpeta_alumno(alumno,padron,carpeta_docente):
+    ruta = carpeta_docente + "/" + alumno + "-" + padron
+    if not os.path.isdir(ruta):
+        os.mkdir(ruta)
+        
+    return ruta
+    
+def crear_carpeta_docente(carpeta_evaluaciones,profe):
+    ruta = carpeta_evaluaciones + "/" + profe
+    if not os.path.isdir(ruta):
+        os.mkdir(ruta)
+        
+    return ruta  
+     
+def verificar_nombre(padron: str, matcheo: str) -> str:
+    alumno = "No existe"
+    with open(matcheo, mode='r', newline='', encoding="UTF-8") as archivo:
+        csv_reader = csv.reader(archivo, delimiter=',')
+        next(csv_reader)
+        for row in csv_reader:
+            nombre = row[0]
+            padron_csv = row[1]
+            if padron_csv == padron:
+                alumno = nombre
+                
+    return alumno    
+    
+def verificar_docente(nombre: str, matcheo: str) -> str:
+    profe = "No tiene profe"
+    with open(matcheo, mode='r', newline='', encoding="UTF-8") as archivo:
+        csv_reader = csv.reader(archivo, delimiter=',')
+        next(csv_reader)
+        for row in csv_reader:
+            profesor = row[0]
+            nombre_csv = row[1]
+            if nombre_csv == nombre:
+                profe = profesor
+                
+    return profe    
+
+def sistema_carpetas(alumnos:dict):
+    usuario = pedir_nombre_usuario()
+    carpeta = carpeta_evaluaciones(usuario)
+    archivo_alumno = "alumnos.csv"
+    archvio_alumnos_docentes = "docente-alumnos.csv" 
+    for alumno in alumnos:
+        nombre = verificar_nombre(alumno, archivo_alumno)
+        docente = verificar_docente(nombre, archvio_alumnos_docentes)
+        carpeta_docente = crear_carpeta_docente(carpeta_evaluaciones, profe)
+        carpeta_alumno = crear_carpeta_alumno(alumno, padron, carpeta_docente)
+        
+sistema_carpetas()
+      
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
     print("\nHola! Bienvenidos a nuestro servicio de google drive y gmail.\n")
