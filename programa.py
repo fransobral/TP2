@@ -699,7 +699,7 @@ def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
     print("\nHola! Bienvenidos a nuestro servicio de google drive y gmail.\n")
     menu(drive_service)
-    print("Muchas gracias por utilizar nuestro programa!")
+    print("\nMuchas gracias por utilizar nuestro programa!\n")
 
 if __name__ == '__main__':
     main() 
