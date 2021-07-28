@@ -149,7 +149,9 @@ def eleccion_crear_archivo_o_carpeta(drive_service:Resource) -> None: #ver comen
     if confirmacion == "si" or confirmacion == "Si":
         while decision == "b":
             nombre_carpeta = input("\nPor favor ingrese el nombre de la carpeta a crear: ")
+            file_path = input("\nIngrese el directorio donde se va a almacenar la carpeta creada: ")
             crear_carpeta_drive(drive_service,nombre_carpeta)
+            crear_carpeta_local(nombre_carpeta, file_path)
             repeticion = input("Desea crear otra carpeta? (si/no) ")
             if repeticion != "si":
                 decision = repeticion
@@ -157,8 +159,8 @@ def eleccion_crear_archivo_o_carpeta(drive_service:Resource) -> None: #ver comen
             file_name = input("\nIngrese el nombre con la extension del archivo a crear: ")
             file_path = input("\nIngrese el directorio donde se va a almacenar el archivo creado: ")
             folder_id = input("\nIngrese el id de la carpeta en la cual se va a almacenar en el drive: ")
-            #aca habria que ejecutar la funcion de crear un archivo local (ya le pedi el nombre y la ruta en la cual se va a almacenar el archivo localmente)
             subir_archivo_drive(drive_service,file_name,folder_id,file_path)
+            crear_archivo_local(file_name)
             repeticion = input("Desea crear otro archivo? (si/no) ")
             if repeticion != "si":
                 decision = repeticion
