@@ -641,6 +641,11 @@ def sincronizacion_drive(drive_service:Resource)-> None:  #chequear q funcionen 
     except:
         print("\nSu id de drive es inexsistente, por favor intente nuevamente\n.")
 
+def mails(service_gmail : Resource, query_string, label_ids, message_list_response, sender, to, subject, message_text):
+    buscar_mails(service_gmail, query_string, label_ids)
+    validacion = validar_mail_evaluacion(service_gmail, message_list_response)
+    mandar_mail(sender, to, subject, message_text, validacion, service_gmail)
+
 def validar_mail_evaluacion(service_gmail:Resource, message_list_response) -> None:
     """ 
     Pre: Recibe el servicio de Gmail.
@@ -654,22 +659,21 @@ def validar_mail_evaluacion(service_gmail:Resource, message_list_response) -> No
     # for i in asunto:
     #     i[1]
     # informacion[i] = {}
-    asunto2 = asunto['payload']['headers'].execute()
+    asunto2 = asunto['payload']['headers']
+    
 
     with open('alumnos.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for fila in csv_reader:
             if fila[1] == asunto:
                 validacion = True 
-
-    print(asunto)
+    return validacion
 
 def buscar_mails(service_gmail:Resource, query_string:str, label_ids =[]) -> None:
     """ 
     Pre: 
     Post: 
     """
-
     try:
         message_list_response = service_gmail.users().messages().list(
             userId = 'yo',
