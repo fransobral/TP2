@@ -752,7 +752,6 @@ def mandar_mail(validacion:bool, gmail_service:Resource, mensajes_obtenidos) -> 
     Pre: Recibe los datos del usuario que mando un mail.
     Post: Envia un mail avisando si la entrega fue correcta o no.
     """
-
     to_mail = conseguir_from(gmail_service, mensajes_obtenidos)
     from_mail = conseguir_to(gmail_service, mensajes_obtenidos)
 
@@ -773,37 +772,8 @@ def mandar_mail(validacion:bool, gmail_service:Resource, mensajes_obtenidos) -> 
     except Exception:
         print('Ha ocurrido un error, en cuanto podamos enviaremos el mail.')
 
-def pedir_nombre_usuario()-> str:
+#FRAN: AGREGAR PRE Y POST CONDICIONES Y TIPO DE PARAMETROS.
 
-    nombre_usuario = input("Ingrese nombre de usuario: ")
-    while not os.path.isdir("C:/Users/" + nombre_usuario):
-        nombre_usuario = input("Ingrese nuevamente el nombre de usuario: ")
-    
-    return nombre_usuario
-
-# FRAN: AGREGAR PRE Y POST CONDICIONES Y TIPO DE PARAMETROS.
-
-def carpeta_evaluaciones(usuario) -> str: # EN linux no va a correr, fijarse fran
-    ruta = "C:/Users/" + usuario + "/Desktop/Evaluaciones"
-    if not os.path.isdir(ruta):
-        os.mkdir(ruta)
-        
-    return ruta
-
-def crear_carpeta_alumno(alumno,padron,carpeta_docente) -> str:
-    ruta = carpeta_docente + "/" + alumno + "-" + padron
-    if not os.path.isdir(ruta):
-        os.mkdir(ruta)
-        
-    return ruta
-    
-def crear_carpeta_docente(carpeta_evaluaciones,profe):
-    ruta = carpeta_evaluaciones + "/" + profe
-    if not os.path.isdir(ruta):
-        os.mkdir(ruta)
-        
-    return ruta  
-     
 def verificar_nombre(padron:int, matcheo:str) -> str:
 
     alumno = "No existe"
@@ -816,11 +786,11 @@ def verificar_nombre(padron:int, matcheo:str) -> str:
             if padron_csv == padron:
                 alumno = nombre
                 
-    return alumno    
+    return alumno
     
 def verificar_docente(nombre:str, matcheo:str) -> str:
     profe = "No tiene profe"
-    with open(matcheo, mode='r', newline='', encoding="UTF-8") as archivo:
+    with open(matcheo, mode='r', newline='', encoding="UTF-8") as archivo: #open matcheo no exssiste. tenes q abrir un archivo
         csv_reader = csv.reader(archivo, delimiter=',')
         next(csv_reader)
         for row in csv_reader:
@@ -831,16 +801,20 @@ def verificar_docente(nombre:str, matcheo:str) -> str:
                 
     return profe    
 
-def sistema_carpetas(alumnos:dict): #ver que onda esto
-    usuario = pedir_nombre_usuario()
-    carpeta = carpeta_evaluaciones(usuario)
-    archivo_alumno = "alumnos.csv"
-    archvio_alumnos_docentes = "docente-alumnos.csv" 
-    for alumno in alumnos:
-        nombre = verificar_nombre(alumno, archivo_alumno)
-        docente = verificar_docente(nombre, archvio_alumnos_docentes)
-        carpeta_docente = crear_carpeta_docente(carpeta_evaluaciones, docente)
-        carpeta_alumno = crear_carpeta_alumno(alumno, padron, carpeta_docente)
+def sistema_carpetas()-> None: #ver que onda esto
+    ruta_carpeta_evaluaciones = input ("\nIngrese la ruta en la cual desea almacenar la carpeta Evaluaciones: ")
+    crear_carpeta_local("Evaluaciones",ruta_carpeta_evaluaciones)
+    archivo_alumno = "alumnos.csv" #abrir archivo csv
+    archvio_alumnos_docentes = "docente-alumnos.csv" #abrir archivo csv
+    
+    for alumno in archivo_alumno:
+        nombre = verificar_nombre(alumno, archivo_alumno) #le estas pasando el nombre de un alumno a un padron. archivo alumno != matcheo, son cosas distintas.
+        docente = verificar_docente(nombre, archvio_alumnos_docentes) #le estas pasando un nombre de un archivo a un matcheo. archvio_alumnos_docentes != matcheo, son cosas distintas.
+        ruta_docentes = f"{ruta_carpeta_evaluaciones}/{docente}"
+        crear_carpeta_local(docente,ruta_docentes)
+        nombre_carpeta_alumnos = alumno
+        ruta_alumnos = f"{ruta_docentes}/{nombre}"
+        crear_carpeta_local(nombre_carpeta_alumnos,ruta_alumnos)
       
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
