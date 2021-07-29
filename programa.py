@@ -674,10 +674,14 @@ def conseguir_asunto(gmail_service:Resource, mensajes_obtenidos) -> list:
     for mensaje in mensajes_obtenidos:
 
         informacion_de_mail = gmail_service.users().messages().get(userId = 'me', id = mensaje).execute()
-
+    
         for informacion_asunto in informacion_de_mail['payload']['headers']:
-            if informacion_asunto['name'] == 'Subject':
-                mail_subject.append(informacion_asunto['value'])
+            try:
+                if informacion_asunto['name'] == 'Subject':
+                    padron_asunto = informacion_asunto['value'].split(',')
+                    mail_subject.append(padron_asunto[1])
+            except:
+                print('Por favor revise haber enviado el mail correctamente.')
 
     return mail_subject
 
@@ -760,15 +764,15 @@ def mandar_mail(validacion:bool, gmail_service:Resource, mensajes_obtenidos) -> 
     else:
         validar = 'incorrecta, por favor revisar y enviar datos correctamente'
 
+    mimeMessage = MIMEMultipart()
+    mimeMessage['subject'] = "Entrega evaluacion"
     message = f'Tu entrega esta {validar}.'
-    mime_message = MIMEMultipart()
-    mime_message['to'] = to_mail        
-    mime_message['from'] = from_mail         
-    mime_message['subject'] = "Entrega evaluacion"
-    mime_message.attach(MIMEText(message, "plain"))
-    raw_string = base64.urlsafe_b64encode(mime_message.as_string())
+    mimeMessage['to'] = to_mail        
+    mimeMessage['from'] = from_mail         
+    mimeMessage.attach(MIMEText(message, "plain"))
+    raw_string = base64.urlsafe_b64encode(mimeMessage.as_bytes()).decode()
     try:
-        message = gmail_service.users().messages().send(userId = 'yo', body = {'raw': raw_string}).execute()
+        message = gmail_service.users().messages().send(userId = 'me', body = {'raw': raw_string}).execute()
     except Exception:
         print('Ha ocurrido un error, en cuanto podamos enviaremos el mail.')
 
@@ -819,6 +823,7 @@ def sistema_carpetas()-> None: #ver que onda esto
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
     gmail_service = service_gmail.obtener_servicio() #este es el servicio de gmail
+    comprobacion_recepcion_entregas(gmail_service)
     print("\nHola! Bienvenidos a nuestro servicio de google drive y gmail.\n")
     menu(drive_service,gmail_service)
     print("\nMuchas gracias por utilizar nuestro programa!\n")
