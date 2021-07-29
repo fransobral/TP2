@@ -1,10 +1,16 @@
+<<<<<<< HEAD
+=======
 import service_drive
 import service_gmail
 import os,io,shutil,time,csv,base64
+>>>>>>> 13303f8d713116e361ff74070fd9eb33ef2bfb5a
 from googleapiclient.discovery import Resource
 from googleapiclient.http import MediaFileUpload,MediaIoBaseDownload
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import service_drive
+import service_gmail
+import os,io,shutil,time,csv,base64
 
 def verificacion_eleccion(numero:int) -> tuple:
     """ 
