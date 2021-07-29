@@ -196,9 +196,11 @@ def listar_archivos_drive(drive_service:Resource)-> None:
         elif decision == "b":
             id = obtener_ids(carpetas,ids_archivos,ids_carpetas)
             listar = False
-        else:
+        elif decision == "c":
             print("\nUsted eligio vover al menu principal.\n")
             listar = False
+        else: 
+            print("\nLa opcion seleccionada no exsiste. Volveremos al menu principal.\n")
 
 def listar_archivos_local() -> None:
     """ 
@@ -232,10 +234,10 @@ def crear_archivo_local(file_name:str) -> None: # Ver esto
         filename = file_name[-4:] 
     try:
         open(file_name, 'a').close()
+        print('Archivo creado.')
     except OSError:
         print('Error creando el archivo.')
-    else:
-        print('Archivo creado.')
+        
 
 def navegacion_carpetas_drive(drive_service:Resource) -> str:
     """ 
@@ -262,7 +264,10 @@ def navegacion_carpetas_drive(drive_service:Resource) -> str:
         else:
             print("\nUsted eligió vover al menu principal.\n")
             listar = False
-    return id_carpeta
+    try:
+        return id_carpeta
+    except:
+        print("Esa opcion no es corecta")
 
 def conversor_int(numero:str) -> int:
     """ 
@@ -406,19 +411,19 @@ def subir_archivo_drive(drive_service:Resource,file_name:str,folder_id:str,file_
     Pre: Recibe los servicios de google drive, el nombre del archivo y el id de la carpeta.
     Post: Recibe un archivo y lo sube a la carpeta deseada por el usuraio.
     """
-    #try:
-    file_metadata = {'name': file_name} 
-    filepath = f"{file_path}/{file_name}"
-    media = MediaFileUpload(filepath)
-    file = drive_service.files().create(body=file_metadata,
-                                        media_body=media,
-                                        fields='id').execute()
-    file_id = file.get('id')
+    try:
+        file_metadata = {'name': file_name} 
+        filepath = f"{file_path}/{file_name}"
+        media = MediaFileUpload(filepath)
+        file = drive_service.files().create(body=file_metadata,
+                                            media_body=media,
+                                            fields='id').execute()
+        file_id = file.get('id')
 
-    mover_archivos_drive(drive_service,file_id,folder_id)
-    print('\nID del archivo: %s\n' % file_id)
-    #except: 
-        #print("\nLos datos ingresados no son validos, por favor intente nuevamente.\n")
+        mover_archivos_drive(drive_service,file_id,folder_id)
+        print('\nID del archivo: %s\n' % file_id)
+    except: 
+        print("\nLos datos ingresados no son validos, por favor intente nuevamente.\n")
 
 def descargar_archivo_drive(drive_service:Resource,file_id:str,file_name:str,file_path:str) -> None: #funcion para navegar entre archivos locales y que me devuuelva el path?
     """ 
