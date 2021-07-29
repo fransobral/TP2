@@ -776,12 +776,15 @@ def mandar_mail(validacion:bool, gmail_service:Resource, mensajes_obtenidos) -> 
     except Exception:
         print('Ha ocurrido un error, en cuanto podamos enviaremos el mail.')
 
-#FRAN: AGREGAR PRE Y POST CONDICIONES Y TIPO DE PARAMETROS.
 
-def verificar_nombre(padron:int, matcheo:str) -> str:
-
+'''
+def verificar_nombre(padron:int) -> str:
+    """ 
+    Pre: Recibe el padron del alumno.
+    Post: Devuelve la verificacion del padron con el alumno.
+    """
     alumno = "No existe"
-    with open(matcheo, mode='r', newline='', encoding="UTF-8") as archivo:
+    with open(mode='r', newline='', encoding="UTF-8") as archivo:
         csv_reader = csv.reader(archivo, delimiter=',')
         next(csv_reader)
         for row in csv_reader:
@@ -792,9 +795,13 @@ def verificar_nombre(padron:int, matcheo:str) -> str:
                 
     return alumno
     
-def verificar_docente(nombre:str, matcheo:str) -> str:
+def verificar_docente(nombre:str) -> str:
+    """ 
+    Pre: Recibe el nombre del alumno y docente.
+    Post: Devuelve el profesor verificado con su alumno.
+    """
     profe = "No tiene profe"
-    with open(matcheo, mode='r', newline='', encoding="UTF-8") as archivo: #open matcheo no exssiste. tenes q abrir un archivo
+    with open(mode='r', newline='', encoding="UTF-8") as archivo: 
         csv_reader = csv.reader(archivo, delimiter=',')
         next(csv_reader)
         for row in csv_reader:
@@ -819,7 +826,7 @@ def sistema_carpetas()-> None: #ver que onda esto
         nombre_carpeta_alumnos = alumno
         ruta_alumnos = f"{ruta_docentes}/{nombre}"
         crear_carpeta_local(nombre_carpeta_alumnos,ruta_alumnos)
-      
+'''      
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
     gmail_service = service_gmail.obtener_servicio() #este es el servicio de gmail
