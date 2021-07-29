@@ -1,16 +1,10 @@
-from email import message
-from email.message import Message
-from typing import List, Tuple
 from googleapiclient.discovery import Resource
-from random import randint
-import service_drive
 from googleapiclient.http import MediaFileUpload,MediaIoBaseDownload
-import os,io,shutil,tempfile,time,sys
-import service_gmail
-import csv
-import base64
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import service_drive
+import service_gmail
+import os,io,shutil,time,csv,base64
 
 
 def verificacion_eleccion(numero:int) -> tuple:
@@ -238,7 +232,6 @@ def crear_archivo_local(file_name:str) -> None: # Ver esto
     except OSError:
         print('Error creando el archivo.')
         
-
 def navegacion_carpetas_drive(drive_service:Resource) -> str:
     """ 
     Pre: Recibe lo servicios de google drive.
