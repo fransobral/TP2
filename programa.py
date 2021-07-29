@@ -37,7 +37,7 @@ def verificador_decision(decision:str)-> tuple:
         print("\nMuy bien, que desea hacer a continuacion?\n")
     return correcta_eleccion
 
-def elecciones(eleccion:int,drive_service:Resource) -> str: #modularizarr
+def elecciones(eleccion:int,drive_service:Resource, gmail_service:Resource) -> str: #modularizarr
     """ 
     Pre: Recibe un numero.
     Post: En base al numero, decide que funcion ejecutar y retorna un str que indica si el usuario quiere cerrar el programa o no.
@@ -47,6 +47,9 @@ def elecciones(eleccion:int,drive_service:Resource) -> str: #modularizarr
     if eleccion == 1:
         correcta_eleccion = verificacion_eleccion(1)
         if correcta_eleccion:
+            print('\nEstos son los archivos locales: \n')
+            listar_archivos_local()
+            print('\nEstos son los archivos de drive: \n')
             listar_archivos_drive(drive_service)
             print("\nMuy bien, que desea hacer a continuacion?\n")
     elif eleccion == 2:
@@ -99,7 +102,7 @@ def elecciones(eleccion:int,drive_service:Resource) -> str: #modularizarr
     
     return exit
 
-def menu(drive_service:Resource) -> None:
+def menu(drive_service:Resource, gmail_service:Resource) -> None:
     """ 
     Pre: Recibe el servicio de google drive.
     Post: Printea las opciones del programa para que el usuario eliga una.
@@ -119,7 +122,7 @@ def menu(drive_service:Resource) -> None:
         eleccion = int(verificador_numero(eleccion))
 
         if eleccion == 1 or eleccion == 2 or eleccion == 3 or eleccion == 4 or eleccion == 5 or eleccion == 6 or eleccion == 7 or eleccion == 8:
-            exit = elecciones(eleccion,drive_service)
+            exit = elecciones(eleccion,drive_service, gmail_service)
         else: 
             print("Esa opcion no esta en el rango, por favor intente nuevamente.")
 
@@ -156,9 +159,10 @@ def eleccion_crear_archivo_o_carpeta(drive_service:Resource) -> None:
         while decision == "a":
             file_name = input("\nIngrese el nombre con la extension del archivo a crear: ")
             file_path = input("\nIngrese el directorio donde se va a almacenar el archivo creado: ")
-            folder_id = input("\nIngrese el id de la carpeta en la cual se va a almacenar en el drive: ")
-            subir_archivo_drive(drive_service,file_name,folder_id,file_path)
+            print('\nVamos a navegar por sus carpetas de Drive. Al llegar a la carpeta en la que quiere almacenar el archivo, seleccione la opcion obtener ID.\n')
+            folder_id = navegacion_carpetas_drive(drive_service)
             crear_archivo_local(file_name)
+            subir_archivo_drive(drive_service,file_name,folder_id,file_path)
             repeticion = input("Desea crear otro archivo? (si/no) ")
             if repeticion != "si":
                 decision = repeticion
@@ -174,7 +178,7 @@ def listar_archivos_drive(drive_service:Resource)-> None:
     while listar:
         ids_carpetas,ids_archivos = separador_archivos_carpetas(archivos)
         imprimir_carpetas(ids_carpetas)
-        imprimir_archivos(ids_archivos)
+        imprimir_archivos_drive(ids_archivos)
 
         decision,carpetas = verificador_de_carpetas(ids_carpetas)
         
@@ -197,7 +201,7 @@ def listar_archivos_local() -> None:
     """
     lista_de_archivos = os.listdir(os.path.abspath(os.getcwd()))
 
-    print(lista_de_archivos)
+    imprimir_archivos_local(lista_de_archivos)
 
 def crear_carpeta_local(nombre_carpeta:str, file_path:str) -> None: 
     """ 
@@ -205,14 +209,14 @@ def crear_carpeta_local(nombre_carpeta:str, file_path:str) -> None:
     Post: Crea la carpeta en el directorio que el usuario elige.
     """
     try:
-        carpeta_nueva = os.mkdir(nombre_carpeta) 
-    except OSError:
-        print('Error creando el archivo.')
-    else:
-        path = file_path 
-        shutil.move(carpeta_nueva, path)
-        print('Creaste la carpeta .')
-    
+        carpeta_nueva = os.mkdir(nombre_carpeta)
+        shutil.move(carpeta_nueva, file_path)
+        print('Creaste la carpeta.')
+    except FileNotFoundError:
+        print('\nEl directorio ingresado es inexistente, error creando la carpeta\n')
+    except:
+        print('\nError creando la carpeta\n')
+
 def crear_archivo_local(file_name:str) -> None: # Ver esto
     """ 
     Pre: Recibe el nombre del archivo.
@@ -344,7 +348,7 @@ def imprimir_carpetas(ids_carpetas:list)-> None:
         numero += 1
         print(f'\nCarpeta Nº {numero}: {ids_carpetas[numero-1][1]}')
 
-def imprimir_archivos(ids_archivos:list)-> None:
+def imprimir_archivos_drive(ids_archivos:list)-> None:
     """ 
     Pre: Recibe una lista de archivos.
     Post: Imprime esa lista separada por un numero inicial.
@@ -353,6 +357,16 @@ def imprimir_archivos(ids_archivos:list)-> None:
     for file in ids_archivos: 
         numero += 1
         print(f'\nArchivo Nº {numero}: {ids_archivos[numero-1][1]}')
+
+def imprimir_archivos_local(archivos:list)-> None:
+    """ 
+    Pre: Recibe una lista de archivos.
+    Post: Imprime esa lista separada por un numero inicial.
+    """
+    numero = 0
+    for file in archivos: 
+        numero += 1
+        print(f'\nArchivo Nº {numero}: {file}')
 
 def crear_carpeta_drive(drive_service:Resource,nombre_carpeta:str)-> None: #chequear q este ok el try except
     """ 
@@ -390,19 +404,19 @@ def subir_archivo_drive(drive_service:Resource,file_name:str,folder_id:str,file_
     Pre: Recibe los servicios de google drive, el n ombre del archivo y el id de la carpeta.
     Post: Recibe un archivo y lo sube a la carpeta deseada por el usuraio.
     """
-    try:
-        file_metadata = {'name': file_name} 
-        filepath = f"{file_path}/{file_name}"
-        media = MediaFileUpload(filepath)
-        file = drive_service.files().create(body=file_metadata,
-                                            media_body=media,
-                                            fields='id').execute()
-        file_id = file.get('id')
+    #try:
+    file_metadata = {'name': file_name} 
+    filepath = f"{file_path}/{file_name}"
+    media = MediaFileUpload(filepath)
+    file = drive_service.files().create(body=file_metadata,
+                                        media_body=media,
+                                        fields='id').execute()
+    file_id = file.get('id')
 
-        mover_archivos_drive(drive_service,file_id,folder_id)
-        print('\nID del archivo: %s\n' % file_id)
-    except:
-        print("\nLos datos ingresados no son validos, por favor intente nuevamente.\n")
+    mover_archivos_drive(drive_service,file_id,folder_id)
+    print('\nID del archivo: %s\n' % file_id)
+    #except: 
+        #print("\nLos datos ingresados no son validos, por favor intente nuevamente.\n")
 
 def descargar_archivo_drive(drive_service:Resource,file_id:str,file_name:str,file_path:str) -> None: #funcion para navegar entre archivos locales y que me devuuelva el path?
     """ 
@@ -641,7 +655,16 @@ def sincronizacion_drive(drive_service:Resource)-> None:  #chequear q funcionen 
     except:
         print("\nSu id de drive es inexsistente, por favor intente nuevamente\n.")
 
-def conseguir_asunto(service_gmail:Resource, mensajes_obtenidos):
+def comprobacion_recepcion_entregas(gmail_service:Resource):
+    """
+    PRE: Se le pasa el servicio de gmail.
+    POST: Ejecuta las funciones de mandar mails segun la entrega.
+    """
+    mensajes = buscar_mails(gmail_service)
+    validar_mail = validar_mail_evaluacion(gmail_service, mensajes)
+    mandar_mail(validar_mail, gmail_service, mensajes)
+
+def conseguir_asunto(gmail_service:Resource, mensajes_obtenidos):
     """ 
     Pre: Recibe los servicios de Gmail y todos los mails.
     Post: Retorna una lista con todos los asuntos con los que se enviaron los mails.
@@ -650,14 +673,15 @@ def conseguir_asunto(service_gmail:Resource, mensajes_obtenidos):
     
     for mensaje in mensajes_obtenidos:
 
-        informacion_de_mail = service_gmail.users().messages().get(userId = 'yo', id = mensaje)
+        informacion_de_mail = gmail_service.users().messages().get(userId = 'me', id = mensaje).execute()
 
-        if mensaje['payload']['headers']['name'] == 'Subject':
-            mail_subject.append(mensaje.index(['payload']['headers']['name']))
+        for informacion_asunto in informacion_de_mail['payload']['headers']:
+            if informacion_asunto['name'] == 'Subject':
+                mail_subject.append(informacion_asunto['value'])
 
     return mail_subject
 
-def conseguir_to(service_gmail:Resource, mensajes_obtenidos):
+def conseguir_to(gmail_service:Resource, mensajes_obtenidos):
     """ 
     Pre: Recibe los servicios de Gmail y todos los mails.
     Post: Retorna una lista con todas las direcciones a donde se enviaron los mails.
@@ -666,51 +690,56 @@ def conseguir_to(service_gmail:Resource, mensajes_obtenidos):
 
     for mensaje in mensajes_obtenidos:
 
-            informacion_de_mail = service_gmail.users().messages().get(userId = 'yo', id = mensaje)
+            informacion_de_mail = gmail_service.users().messages().get(userId = 'me', id = mensaje).execute()
 
-            if mensaje['payload']['headers']['name'] == 'To':
-                mail_to.append(mensaje.index(['payload']['headers']['name']))
+            for informacion_to in informacion_de_mail['payload']['headers']:
+                if informacion_to['name'] == 'To':
+                    mail_to.append(informacion_to['value'])
     
     return mail_to
 
-def conseguir_from(service_gmail:Resource, mensajes_obtenidos):
+def conseguir_from(gmail_service:Resource, mensajes_obtenidos):
     """ 
     Pre: Recibe los servicios de Gmail y todos los mails.
     Post: Retorna una lista con todos los destinatarios donde se enviaron los mails.
     """
     mail_from = list()
-
+    
     for mensaje in mensajes_obtenidos:
 
-        informacion_de_mail = service_gmail.users().messages().get(userId = 'yo', id = mensaje)
+        informacion_de_mail = gmail_service.users().messages().get(userId = 'me', id = mensaje).execute()
 
-        if mensaje['payload']['headers']['name'] == 'From':
-            mail_from.append(mensaje.index(['payload']['headers']['name']))
+        for informacion_from in informacion_de_mail['payload']['headers']:
+            if informacion_from['name'] == 'From':
+                mail_from.append(informacion_from['value'])
     
     return mail_from
 
-def validar_mail_evaluacion(service_gmail:Resource, mensajes_obtenidos) -> None:
+def validar_mail_evaluacion(gmail_service:Resource, mensajes_obtenidos) -> None:
     """ 
     Pre: Recibe el servicio de Gmail.
     Post: Validar que el subject del mail (padron) este en el archivo csv.
     """
-    subject = conseguir_asunto(service_gmail, mensajes_obtenidos)
+    validacion = False
+    subject = conseguir_asunto(gmail_service, mensajes_obtenidos)
 
     with open('alumnos.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
-        for fila in range(len(csv_reader)):
-            if fila[1] in subject[fila]:
-                validacion = True 
+        data = list(csv_reader)
+        for fila in range(len(data)):
+            for asunto in range(len(subject)):
+                if data[fila][1] in subject[asunto]:
+                    validacion = True 
 
     return validacion
 
-def buscar_mails(service_gmail:Resource) -> None:
+def buscar_mails(gmail_service:Resource) -> None: # Revisar esto
     """ 
     Pre: Recibe los servicios de gmail.
     Post: Agrega a una lista todos los mails que cumplan esa condicion.
     """
     mensajes = list()
-    recibir_mails = service_gmail.users().messages().list(userId = 'yo', q = 'label: inbox has:attachment is:unread')
+    recibir_mails = gmail_service.users().messages().list(userId = 'me', q = 'label:inbox has:attachment is:unread').execute()
     mensajes_obtenidos = recibir_mails['messages']
 
     for mensaje_obtenido in mensajes_obtenidos:
@@ -718,48 +747,43 @@ def buscar_mails(service_gmail:Resource) -> None:
     
     return mensajes
 
-def mandar_mail(validacion:bool, service_gmail:Resource, mensajes_obtenidos) -> None:  # Fijarse como hacer que el to y el from quede bien.
+def mandar_mail(validacion:bool, gmail_service:Resource, mensajes_obtenidos) -> None:  # Terminar de ver si anda.
     """ 
     Pre: Recibe los datos del usuario que mando un mail.
     Post: Envia un mail avisando si la entrega fue correcta o no.
     """
 
-    to_mail = conseguir_from(service_gmail, mensajes_obtenidos)
-    from_mail = conseguir_to(service_gmail, mensajes_obtenidos)
-    # habria que hacer que se llame 2 veces a la funcion y que se pase como parametro si fue exitosa o no y ponerlo en el asunto
+    to_mail = conseguir_from(gmail_service, mensajes_obtenidos)
+    from_mail = conseguir_to(gmail_service, mensajes_obtenidos)
+
     if validacion == True:
-        message = "Tu entrega esta correcta."
-        mime_message = MIMEMultipart()
-        mime_message['to'] = service_gmail.users().messages().get(user_id = "", id = "")['payload']['headers']
-        mime_message['from'] = service_gmail.users().messages().get(user_id = "", id = "")['payload']['headers']
-        mime_message['subject'] = "Entrega evaluacion "
-        mime_message.attach(MIMEText(message, "plain"))
-        raw_string = base64.urlsafe_b64encode(mime_message.as_string())
+        validar = 'correcta'
+    else:
+        validar = 'incorrecta, por favor revisar y enviar datos correctamente'
+
+    message = f'Tu entrega esta {validar}.'
+    mime_message = MIMEMultipart()
+    mime_message['to'] = to_mail        
+    mime_message['from'] = from_mail         
+    mime_message['subject'] = "Entrega evaluacion"
+    mime_message.attach(MIMEText(message, "plain"))
+    raw_string = base64.urlsafe_b64encode(mime_message.as_string())
     try:
-        message = service_gmail.users().messages().send(userId = "yo", body = {"raw": raw_string}).execute()
+        message = gmail_service.users().messages().send(userId = 'yo', body = {'raw': raw_string}).execute()
     except Exception:
         print('Ha ocurrido un error, en cuanto podamos enviaremos el mail.')
 
-
-    else:
-        message = "Tu entrega esta incorrecta, por favor revisar y enviar datos correctamente."
-        mime_message = MIMEMultipart()
-        mime_message['to'] = "ipasman@fi.uba.ar"
-        mime_message['from'] = "algoritmos1costa@gmail.com"
-        mime_message['subject'] = "Entrega Evaluacion"
-        mime_message.attach(MIMEText(message, "plain"))
-        raw_string = base64.urlsafe_b64encode(mime_message.as_string())
-
-        message = service_gmail.users().messages().send(userId = "yo", body = {"raw": raw_string}).execute()
-
 def pedir_nombre_usuario()-> str:
+
     nombre_usuario = input("Ingrese nombre de usuario: ")
     while not os.path.isdir("C:/Users/" + nombre_usuario):
         nombre_usuario = input("Ingrese nuevamente el nombre de usuario: ")
     
     return nombre_usuario
 
-def carpeta_evaluaciones(usuario) -> str:
+# FRAN: AGREGAR PRE Y POST CONDICIONES Y TIPO DE PARAMETROS.
+
+def carpeta_evaluaciones(usuario) -> str: # EN linux no va a correr, fijarse fran
     ruta = "C:/Users/" + usuario + "/Desktop/Evaluaciones"
     if not os.path.isdir(ruta):
         os.mkdir(ruta)
@@ -780,7 +804,8 @@ def crear_carpeta_docente(carpeta_evaluaciones,profe):
         
     return ruta  
      
-def verificar_nombre(padron:str, matcheo:str) -> str:
+def verificar_nombre(padron:int, matcheo:str) -> str:
+
     alumno = "No existe"
     with open(matcheo, mode='r', newline='', encoding="UTF-8") as archivo:
         csv_reader = csv.reader(archivo, delimiter=',')
@@ -814,13 +839,14 @@ def sistema_carpetas(alumnos:dict): #ver que onda esto
     for alumno in alumnos:
         nombre = verificar_nombre(alumno, archivo_alumno)
         docente = verificar_docente(nombre, archvio_alumnos_docentes)
-        carpeta_docente = crear_carpeta_docente(carpeta_evaluaciones, profe)
+        carpeta_docente = crear_carpeta_docente(carpeta_evaluaciones, docente)
         carpeta_alumno = crear_carpeta_alumno(alumno, padron, carpeta_docente)
       
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
+    gmail_service = service_gmail.obtener_servicio() #este es el servicio de gmail
     print("\nHola! Bienvenidos a nuestro servicio de google drive y gmail.\n")
-    menu(drive_service)
+    menu(drive_service,gmail_service)
     print("\nMuchas gracias por utilizar nuestro programa!\n")
 
 if __name__ == '__main__':
