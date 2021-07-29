@@ -1,17 +1,10 @@
-from email import message
-from email.message import Message
-from typing import List, Tuple
-from googleapiclient.discovery import Resource
-from random import randint
 import service_drive
-from googleapiclient.http import MediaFileUpload,MediaIoBaseDownload
-import os,io,shutil,tempfile,time,sys
 import service_gmail
-import csv
-import base64
+import os,io,shutil,time,csv,base64
+from googleapiclient.discovery import Resource
+from googleapiclient.http import MediaFileUpload,MediaIoBaseDownload
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-
 
 def verificacion_eleccion(numero:int) -> tuple:
     """ 
