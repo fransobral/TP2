@@ -1,6 +1,6 @@
 from email import message
 from email.message import Message
-from typing import Tuple
+from typing import List, Tuple
 from googleapiclient.discovery import Resource
 from random import randint
 import service_drive
@@ -655,7 +655,7 @@ def sincronizacion_drive(drive_service:Resource)-> None:  #chequear q funcionen 
     except:
         print("\nSu id de drive es inexsistente, por favor intente nuevamente\n.")
 
-def comprobacion_recepcion_entregas(gmail_service:Resource):
+def comprobacion_recepcion_entregas(gmail_service:Resource) -> None:
     """
     PRE: Se le pasa el servicio de gmail.
     POST: Ejecuta las funciones de mandar mails segun la entrega.
@@ -664,7 +664,7 @@ def comprobacion_recepcion_entregas(gmail_service:Resource):
     validar_mail = validar_mail_evaluacion(gmail_service, mensajes)
     mandar_mail(validar_mail, gmail_service, mensajes)
 
-def conseguir_asunto(gmail_service:Resource, mensajes_obtenidos):
+def conseguir_asunto(gmail_service:Resource, mensajes_obtenidos) -> list:
     """ 
     Pre: Recibe los servicios de Gmail y todos los mails.
     Post: Retorna una lista con todos los asuntos con los que se enviaron los mails.
@@ -681,7 +681,7 @@ def conseguir_asunto(gmail_service:Resource, mensajes_obtenidos):
 
     return mail_subject
 
-def conseguir_to(gmail_service:Resource, mensajes_obtenidos):
+def conseguir_to(gmail_service:Resource, mensajes_obtenidos) -> list:
     """ 
     Pre: Recibe los servicios de Gmail y todos los mails.
     Post: Retorna una lista con todas las direcciones a donde se enviaron los mails.
@@ -698,7 +698,7 @@ def conseguir_to(gmail_service:Resource, mensajes_obtenidos):
     
     return mail_to
 
-def conseguir_from(gmail_service:Resource, mensajes_obtenidos):
+def conseguir_from(gmail_service:Resource, mensajes_obtenidos) -> list:
     """ 
     Pre: Recibe los servicios de Gmail y todos los mails.
     Post: Retorna una lista con todos los destinatarios donde se enviaron los mails.
@@ -715,7 +715,7 @@ def conseguir_from(gmail_service:Resource, mensajes_obtenidos):
     
     return mail_from
 
-def validar_mail_evaluacion(gmail_service:Resource, mensajes_obtenidos) -> None:
+def validar_mail_evaluacion(gmail_service:Resource, mensajes_obtenidos) -> bool:
     """ 
     Pre: Recibe el servicio de Gmail.
     Post: Validar que el subject del mail (padron) este en el archivo csv.
@@ -733,7 +733,7 @@ def validar_mail_evaluacion(gmail_service:Resource, mensajes_obtenidos) -> None:
 
     return validacion
 
-def buscar_mails(gmail_service:Resource) -> None: # Revisar esto
+def buscar_mails(gmail_service:Resource) -> list: # Revisar esto
     """ 
     Pre: Recibe los servicios de gmail.
     Post: Agrega a una lista todos los mails que cumplan esa condicion.
