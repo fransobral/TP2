@@ -641,78 +641,105 @@ def sincronizacion_drive(drive_service:Resource)-> None:  #chequear q funcionen 
     except:
         print("\nSu id de drive es inexsistente, por favor intente nuevamente\n.")
 
-def mails(service_gmail : Resource, query_string, label_ids, message_list_response, sender, to, subject, message_text):
-    buscar_mails(service_gmail, query_string, label_ids)
-    validacion = validar_mail_evaluacion(service_gmail, message_list_response)
-    mandar_mail(sender, to, subject, message_text, validacion, service_gmail)
+def conseguir_asunto(service_gmail:Resource, mensajes_obtenidos):
+    """ 
+    Pre: Recibe los servicios de Gmail y todos los mails.
+    Post: Retorna una lista con todos los asuntos con los que se enviaron los mails.
+    """
+    mail_subject = list()
+    
+    for mensaje in mensajes_obtenidos:
 
-def validar_mail_evaluacion(service_gmail:Resource, message_list_response) -> None:
+        informacion_de_mail = service_gmail.users().messages().get(userId = 'yo', id = mensaje)
+
+        if mensaje['payload']['headers']['name'] == 'Subject':
+            mail_subject.append(mensaje.index(['payload']['headers']['name']))
+
+    return mail_subject
+
+def conseguir_to(service_gmail:Resource, mensajes_obtenidos):
+    """ 
+    Pre: Recibe los servicios de Gmail y todos los mails.
+    Post: Retorna una lista con todas las direcciones a donde se enviaron los mails.
+    """
+    mail_to = list()
+
+    for mensaje in mensajes_obtenidos:
+
+            informacion_de_mail = service_gmail.users().messages().get(userId = 'yo', id = mensaje)
+
+            if mensaje['payload']['headers']['name'] == 'To':
+                mail_to.append(mensaje.index(['payload']['headers']['name']))
+    
+    return mail_to
+
+def conseguir_from(service_gmail:Resource, mensajes_obtenidos):
+    """ 
+    Pre: Recibe los servicios de Gmail y todos los mails.
+    Post: Retorna una lista con todos los destinatarios donde se enviaron los mails.
+    """
+    mail_from = list()
+
+    for mensaje in mensajes_obtenidos:
+
+        informacion_de_mail = service_gmail.users().messages().get(userId = 'yo', id = mensaje)
+
+        if mensaje['payload']['headers']['name'] == 'From':
+            mail_from.append(mensaje.index(['payload']['headers']['name']))
+    
+    return mail_from
+
+def validar_mail_evaluacion(service_gmail:Resource, mensajes_obtenidos) -> None:
     """ 
     Pre: Recibe el servicio de Gmail.
     Post: Validar que el subject del mail (padron) este en el archivo csv.
     """
-    # Fijarse cual es el subject, y verificar que este como padron en el csv
-
-    validacion = False
-    asunto = service_gmail.users().messages().get(userId = 'me', id = message_list_response)['payload']['headers'].execute()
-    # (pasman isidro, 108116)
-    # for i in asunto:
-    #     i[1]
-    # informacion[i] = {}
-    asunto2 = asunto['payload']['headers']
-    
+    subject = conseguir_asunto(service_gmail, mensajes_obtenidos)
 
     with open('alumnos.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
-        for fila in csv_reader:
-            if fila[1] == asunto:
+        for fila in range(len(csv_reader)):
+            if fila[1] in subject[fila]:
                 validacion = True 
+
     return validacion
 
-def buscar_mails(service_gmail:Resource, query_string:str, label_ids =[]) -> None:
+def buscar_mails(service_gmail:Resource) -> None:
     """ 
-    Pre: 
-    Post: 
+    Pre: Recibe los servicios de gmail.
+    Post: Agrega a una lista todos los mails que cumplan esa condicion.
     """
-    try:
-        message_list_response = service_gmail.users().messages().list(
-            userId = 'yo',
-            labelIds = label_ids,
-            q = query_string
-        ).execute()
+    mensajes = list()
+    recibir_mails = service_gmail.users().messages().list(userId = 'yo', q = 'label: inbox has:attachment is:unread')
+    mensajes_obtenidos = recibir_mails['messages']
 
-        message_items = message_list_response.get('messages')
-        nextPageToken = message_items.get('nextPageToken')
+    for mensaje_obtenido in mensajes_obtenidos:
+        mensajes.append(mensaje_obtenido['id'])
+    
+    return mensajes
 
-        while nextPageToken:
-            message_list_response = service_gmail.users().messages().list(
-                userId = 'yo',
-                labelIds = label_ids,
-                q = query_string,   
-                pageToken = nextPageToken
-            ).execute()
-
-        message_items.extend(message_list_response.get('messages'))
-        nextPageToken = message_items.get('nextPageToken')
-
-    except Exception as e:
-        return None
-
-def mandar_mail(sender:str, to:str, subject:str, message_text:str, validacion:bool, service_gmail:Resource) -> None:  #Agregar el to y el from del mail del alumno, conseguir el id
+def mandar_mail(validacion:bool, service_gmail:Resource, mensajes_obtenidos) -> None:  # Fijarse como hacer que el to y el from quede bien.
     """ 
     Pre: Recibe los datos del usuario que mando un mail.
     Post: Envia un mail avisando si la entrega fue correcta o no.
     """
+
+    to_mail = conseguir_from(service_gmail, mensajes_obtenidos)
+    from_mail = conseguir_to(service_gmail, mensajes_obtenidos)
+    # habria que hacer que se llame 2 veces a la funcion y que se pase como parametro si fue exitosa o no y ponerlo en el asunto
     if validacion == True:
         message = "Tu entrega esta correcta."
         mime_message = MIMEMultipart()
         mime_message['to'] = service_gmail.users().messages().get(user_id = "", id = "")['payload']['headers']
         mime_message['from'] = service_gmail.users().messages().get(user_id = "", id = "")['payload']['headers']
-        mime_message['subject'] = "Entrega Evaluacion"
+        mime_message['subject'] = "Entrega evaluacion "
         mime_message.attach(MIMEText(message, "plain"))
         raw_string = base64.urlsafe_b64encode(mime_message.as_string())
-
+    try:
         message = service_gmail.users().messages().send(userId = "yo", body = {"raw": raw_string}).execute()
+    except Exception:
+        print('Ha ocurrido un error, en cuanto podamos enviaremos el mail.')
+
 
     else:
         message = "Tu entrega esta incorrecta, por favor revisar y enviar datos correctamente."
