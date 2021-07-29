@@ -830,7 +830,6 @@ def sistema_carpetas()-> None: #ver que onda esto
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
     gmail_service = service_gmail.obtener_servicio() #este es el servicio de gmail
-    comprobacion_recepcion_entregas(gmail_service)
     print("\nHola! Bienvenidos a nuestro servicio de google drive y gmail.\n")
     menu(drive_service,gmail_service)
     print("\nMuchas gracias por utilizar nuestro programa!\n")
