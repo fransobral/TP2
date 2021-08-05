@@ -81,7 +81,7 @@ def funcion_4(drive_service:Resource) -> None:
     correcta_eleccion = verificacion_eleccion(4)
     while correcta_eleccion:
         print('\nVamos a navegar por sus carpetas de Drive. Al llegar a la carpeta en la cual quiere descargar el archivo, solicite el id.\n')
-        file_id = listar_archivos_drive(drive_service)
+        file_id = navegacion_carpetas_drive(drive_service)
         file_name = input("\nIngrese el nombre con la extension del archivo a descargar: ")
         file_path = input("\nIngrese la ruta en la cual quiere descargar el archivo: ")
         descargar_archivo_drive(drive_service,file_id,file_name,file_path)
@@ -186,7 +186,7 @@ def verificador_numero(numero:str) -> int:
 
 def eleccion_crear_archivo_o_carpeta(drive_service:Resource) -> None:
     """ 
-    Pre: Recibe el servicoi de google drive.
+    Pre: Recibe el servico de google drive.
     Post: El usuario elige que opcion quiere y se ejecuta la funcion correspondiente a esa accion.
     """
     decision = input("a)Crear un archivo.\nb)Crear una carpeta.\nQue desea hacer?: ")
@@ -285,28 +285,32 @@ def navegacion_carpetas_drive(drive_service:Resource) -> str:
     Pre: Recibe lo servicios de google drive.
     Post: Permite la navegacion por carpetas de drive.
     """
-    listar = True
-    archivos = drive_service.files().list(fields="nextPageToken, files(id, name, mimeType)").execute()
-
-    while listar:
-        ids_carpetas,ids_archivos = separador_archivos_carpetas(archivos)
-        imprimir_carpetas(ids_carpetas)
-
-        decision,carpetas = verificador_de_carpetas(ids_carpetas)
-        
-        if decision == "a":
-            carpeta = input("Introduci el numero de la carpeta: ")
-            carpeta = conversor_int(carpeta)
-            id_carpeta = ids_carpetas[carpeta-1][0]
-            archivos = drive_service.files().list(q= f"'{id_carpeta}' in parents",fields="nextPageToken, files(id, name, mimeType)").execute()
-        elif decision == "b":
-            id_carpeta = obtener_id_carpeta(ids_carpetas)
-            listar = False
-        else:
-            print("\nUsted eligió vover al menu principal.\n")
-            listar = False
     try:
-        return id_carpeta
+        listar = True
+        archivos = drive_service.files().list(q= f"'Root' in parents",fields="nextPageToken, files(id, name, mimeType)").execute()
+
+        while listar:
+            ids_carpetas,ids_archivos = separador_archivos_carpetas(archivos)
+            imprimir_carpetas(ids_carpetas)
+
+            decision,carpetas = verificador_de_carpetas(ids_carpetas)
+            
+            if decision == "a":
+                carpeta = input("Introduci el numero de la carpeta: ")
+                carpeta = conversor_int(carpeta)
+                if carpeta >= len(ids_carpetas) and len(ids_carpetas) >= carpeta:
+                    id_carpeta = ids_carpetas[carpeta-1][0]
+                    archivos = drive_service.files().list(q= f"'{id_carpeta}' in parents",fields="nextPageToken, files(id, name, mimeType)").execute()
+                else:
+                    print("La carpeta que buscas no exsiste. Por favor volve a intentarlo.\n")
+            elif decision == "b":
+                id_carpeta = obtener_id_carpeta(ids_carpetas)
+                listar = False
+            else:
+                print("\nUsted eligió vover al menu principal.\n")
+                listar = False
+        
+            return id_carpeta
     except:
         print("Esa opcion no es corecta")
 
