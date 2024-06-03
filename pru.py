@@ -5,8 +5,9 @@ from googleapiclient.discovery import Resource
 from googleapiclient.http import MediaFileUpload,MediaIoBaseDownload
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import tempfile
 
-def verificacion_eleccion(numero:int) -> bool:
+def verificacion_eleccion(numero:int) -> tuple:
     """ 
     Pre: Le ingreso el numero de opcion elegida por el usuario.
     Post: Imprimo un confirmacion de la eleccion del usuario
@@ -35,97 +36,7 @@ def verificador_decision(decision:str)-> tuple:
         correcta_eleccion = False
     return correcta_eleccion
 
-def funcion_1(drive_service:Resource) -> None:
-    """ 
-    Pre: Le ingreso el servicio de drive api.
-    Post: Ejecuto todas la funciones para el funcionamiento del punto 1.
-    """
-    correcta_eleccion = verificacion_eleccion(1)
-    if correcta_eleccion:
-        print('\nEstos son los archivos locales: \n')
-        listar_archivos_local()
-        print('\nEstos son los archivos de drive: \n')
-        listar_archivos_drive(drive_service)
-        print("\nMuy bien, que desea hacer a continuacion?\n")
-
-def funcion_2(drive_service:Resource) -> None:
-    """ 
-    Pre: Le ingreso el servicio de drive api.
-    Post: Ejecuto todas la funciones para el funcionamiento del punto 2.
-    """
-    correcta_eleccion = verificacion_eleccion(2)  
-    if correcta_eleccion:
-        eleccion_crear_archivo_o_carpeta(drive_service)
-        print("\nMuy bien, que desea hacer a continuacion?\n")
-
-def funcion_3(drive_service:Resource) -> None:
-    """ 
-    Pre: Le ingreso el servicio de drive api.
-    Post: Ejecuto todas la funciones para el funcionamiento del punto 3.
-    """
-    correcta_eleccion = verificacion_eleccion(3)
-    if correcta_eleccion:
-        file_path = input("Por favor ingrese la ruta del archivo: ")
-        file_name = input("\nUsted a decidido subir un archivo. Por favor ingrese el nombre del archivo y la extension: ")
-        print('\nVamos a navegar por sus carpetas de Drive. Al llegar a la carpeta en la cual quiere subir su archivo, seleccione la opcion obtener ID.\n')
-        folder_id = navegacion_carpetas_drive(drive_service)
-        subir_archivo_drive(drive_service,file_name,folder_id,file_path)
-        decision = input("Desea seguir subiendo archivos?: (si/no): ")
-        correcta_eleccion = verificador_decision(decision)
-
-def funcion_4(drive_service:Resource) -> None:
-    """ 
-    Pre: Le ingreso el servicio de drive api.
-    Post: Ejecuto todas la funciones para el funcionamiento del punto 4.
-    """
-    correcta_eleccion = verificacion_eleccion(4)
-    while correcta_eleccion:
-        print('\nVamos a navegar por sus carpetas de Drive. Al llegar a la carpeta en la cual quiere descargar el archivo, solicite el id.\n')
-        file_id = navegacion_carpetas_drive(drive_service)
-        file_name = input("\nIngrese el nombre con la extension del archivo a descargar: ")
-        file_path = input("\nIngrese la ruta en la cual quiere descargar el archivo: ")
-        descargar_archivo_drive(drive_service,file_id,file_name,file_path)
-        decision = input("Desea seguir decargando archivos?: (si/no): ")
-        correcta_eleccion = verificador_decision(decision)
-
-def funcion_5(drive_service:Resource) -> None:
-    """ 
-    Pre: Le ingreso el servicio de drive API.
-    Post: Ejecuta las funciones para el funcionamiento de el punto 5.
-    """
-    correcta_eleccion = verificacion_eleccion(5)
-    while correcta_eleccion:
-        sincronizacion_drive(drive_service)
-        decision = input("Desea sincronizar algo mas?: (si/no): ")
-        correcta_eleccion = verificador_decision(decision)
-
-def funcion_6() -> None: #incompletas por que falta la parte de fran.
-    """ 
-    Pre: -
-    Post: Ejecuta las funciones para el funcionamiento de el punto 6.
-    """
-    correcta_eleccion = verificacion_eleccion(6)
-    while correcta_eleccion:
-        #ejecutar funcion
-        decision = input("Desea seguir decargando archivos?: (si/no): ") #cambiar por la funcion
-        correcta_eleccion = verificador_decision(decision)
-        pass
-    pass
-
-def funcion_7() -> None:#incompletas por que falta la parte de fran.
-    """ 
-    Pre: -
-    Post: Ejecuta las funciones para el correcto funcionamiento del punto 7.
-    """
-    correcta_eleccion = verificacion_eleccion(7)
-    while correcta_eleccion:
-        #ejecutar funcion
-        decision = input("Desea seguir decargando archivos?: (si/no): ")#cambiar por la funcion
-        correcta_eleccion = verificador_decision(decision)
-        pass
-    pass
-
-def elecciones(eleccion:int,drive_service:Resource) -> str:
+def elecciones(eleccion:int,drive_service:Resource, gmail_service:Resource) -> str: #modularizarr
     """ 
     Pre: Recibe un numero.
     Post: En base al numero, decide que funcion ejecutar y retorna un str que indica si el usuario quiere cerrar el programa o no.
@@ -133,19 +44,60 @@ def elecciones(eleccion:int,drive_service:Resource) -> str:
     exit = "no"
 
     if eleccion == 1:
-        funcion_1(drive_service)
+        correcta_eleccion = verificacion_eleccion(1)
+        if correcta_eleccion:
+            print('\nEstos son los archivos locales: \n')
+            listar_archivos_local()
+            print('\nEstos son los archivos de drive: \n')
+            listar_archivos_drive(drive_service)
+            print("\nMuy bien, que desea hacer a continuacion?\n")
     elif eleccion == 2:
-        funcion_2(drive_service)
+        correcta_eleccion = verificacion_eleccion(2)  
+        if correcta_eleccion:
+            eleccion_crear_archivo_o_carpeta(drive_service)
+            print("\nMuy bien, que desea hacer a continuacion?\n")
     elif eleccion == 3:
-        funcion_3(drive_service)
+        correcta_eleccion = verificacion_eleccion(3)
+        if correcta_eleccion:
+            file_path = input("Por favor ingrese la ruta del archivo: ")
+            file_name = input("\nUsted a decidido subir un archivo. Por favor ingrese el nombre del archivo y la extension: ")
+            print('\nVamos a navegar por sus carpetas de Drive. Al llegar a la carpeta en la cual quiere subir su archivo, seleccione la opcion obtener ID.\n')
+            folder_id = navegacion_carpetas_drive(drive_service)
+            subir_archivo_drive(drive_service,file_name,folder_id,file_path)
+            decision = input("Desea seguir subiendo archivos?: (si/no): ")
+            correcta_eleccion = verificador_decision(decision)
     elif eleccion == 4:
-        funcion_4(drive_service)
+        correcta_eleccion = verificacion_eleccion(4)
+        while correcta_eleccion:
+            print('\nVamos a navegar por sus carpetas de Drive. Al llegar a la carpeta en la cual quiere descargar el archivo, solicite el id.\n')
+            file_id = listar_archivos_drive(drive_service)
+            file_name = input("\nIngrese el nombre con la extension del archivo a descargar: ")
+            file_path = input("\nIngrese la ruta en la cual quiere descargar el archivo: ")
+            descargar_archivo_drive(drive_service,file_id,file_name,file_path)
+            decision = input("Desea seguir decargando archivos?: (si/no): ")
+            correcta_eleccion = verificador_decision(decision)
     elif eleccion == 5:
-        funcion_5(drive_service)
+        correcta_eleccion = verificacion_eleccion(5)
+        while correcta_eleccion:
+            sincronizacion_drive(drive_service)
+            decision = input("Desea sincronizar algo mas?: (si/no): ")
+            correcta_eleccion = verificador_decision(decision)
     elif eleccion == 6:
-        funcion_6()
+        correcta_eleccion = verificacion_eleccion(6)
+        while correcta_eleccion:
+            #ejecutar funcion
+            decision = input("Desea seguir decargando archivos?: (si/no): ") #cambiar por la funcion
+            correcta_eleccion = verificador_decision(decision)
+            pass
+        pass
     elif eleccion == 7:
-       funcion_7()
+        correcta_eleccion = verificacion_eleccion(7)
+        while correcta_eleccion:
+            #ejecutar funcion
+            decision = input("Desea seguir decargando archivos?: (si/no): ")#cambiar por la funcion
+            correcta_eleccion = verificador_decision(decision)
+            pass
+        pass
     elif eleccion == 8:
         exit = input("A decidido cerrar el programa, seguro que desea salir? (si/no): ")
     
@@ -171,7 +123,7 @@ def menu(drive_service:Resource, gmail_service:Resource) -> None:
         eleccion = int(verificador_numero(eleccion))
 
         if eleccion == 1 or eleccion == 2 or eleccion == 3 or eleccion == 4 or eleccion == 5 or eleccion == 6 or eleccion == 7 or eleccion == 8:
-            exit = elecciones(eleccion,drive_service)
+            exit = elecciones(eleccion,drive_service, gmail_service)
         else: 
             print("Esa opcion no esta en el rango, por favor intente nuevamente.")
 
@@ -186,7 +138,7 @@ def verificador_numero(numero:str) -> int:
 
 def eleccion_crear_archivo_o_carpeta(drive_service:Resource) -> None:
     """ 
-    Pre: Recibe el servico de google drive.
+    Pre: Recibe el servicoi de google drive.
     Post: El usuario elige que opcion quiere y se ejecuta la funcion correspondiente a esa accion.
     """
     decision = input("a)Crear un archivo.\nb)Crear una carpeta.\nQue desea hacer?: ")
@@ -264,7 +216,7 @@ def crear_carpeta_local(nombre_carpeta:str) -> None:
     except:
         print('\nError creando la carpeta\n')
 
-def crear_archivo_local(file_name:str) -> None:
+def crear_archivo_local(file_name:str) -> None: # Ver esto
     """ 
     Pre: Recibe el nombre del archivo.
     Post: Crea un archivo.
@@ -280,37 +232,34 @@ def crear_archivo_local(file_name:str) -> None:
     except OSError:
         print('Error creando el archivo.')
         
+
 def navegacion_carpetas_drive(drive_service:Resource) -> str:
     """ 
     Pre: Recibe lo servicios de google drive.
     Post: Permite la navegacion por carpetas de drive.
     """
-    try:
-        listar = True
-        archivos = drive_service.files().list(q= f"'Root' in parents",fields="nextPageToken, files(id, name, mimeType)").execute()
+    listar = True
+    archivos = drive_service.files().list(fields="nextPageToken, files(id, name, mimeType)").execute()
 
-        while listar:
-            ids_carpetas,ids_archivos = separador_archivos_carpetas(archivos)
-            imprimir_carpetas(ids_carpetas)
+    while listar:
+        ids_carpetas,ids_archivos = separador_archivos_carpetas(archivos)
+        imprimir_carpetas(ids_carpetas)
 
-            decision,carpetas = verificador_de_carpetas(ids_carpetas)
-            
-            if decision == "a":
-                carpeta = input("Introduci el numero de la carpeta: ")
-                carpeta = conversor_int(carpeta)
-                if carpeta >= len(ids_carpetas) and len(ids_carpetas) >= carpeta:
-                    id_carpeta = ids_carpetas[carpeta-1][0]
-                    archivos = drive_service.files().list(q= f"'{id_carpeta}' in parents",fields="nextPageToken, files(id, name, mimeType)").execute()
-                else:
-                    print("La carpeta que buscas no exsiste. Por favor volve a intentarlo.\n")
-            elif decision == "b":
-                id_carpeta = obtener_id_carpeta(ids_carpetas)
-                listar = False
-            else:
-                print("\nUsted eligió vover al menu principal.\n")
-                listar = False
+        decision,carpetas = verificador_de_carpetas(ids_carpetas)
         
-            return id_carpeta
+        if decision == "a":
+            carpeta = input("Introduci el numero de la carpeta: ")
+            carpeta = conversor_int(carpeta)
+            id_carpeta = ids_carpetas[carpeta-1][0]
+            archivos = drive_service.files().list(q= f"'{id_carpeta}' in parents",fields="nextPageToken, files(id, name, mimeType)").execute()
+        elif decision == "b":
+            id_carpeta = obtener_id_carpeta(ids_carpetas)
+            listar = False
+        else:
+            print("\nUsted eligió vover al menu principal.\n")
+            listar = False
+    try:
+        return id_carpeta
     except:
         print("Esa opcion no es corecta")
 
@@ -329,7 +278,7 @@ def conversor_int(numero:str) -> int:
             numero = input("El valor ingresado no es un numero, por favor intente nuevamente: ")
     return numero
 
-def obtener_ids(carpeta:bool,ids_archivos:list,ids_carpetas:list) -> None:
+def obtener_ids(carpeta:bool,ids_archivos:list,ids_carpetas:list) -> str:
     """ 
     Pre: Recibe las listas de archivos y el booleano carpeta.
     Post: Le pregunta al usuario que id quiere obtener (en caso de que no haya carpetas asume que es de archivos) y lo imprime.
@@ -420,7 +369,7 @@ def imprimir_archivos_local(archivos:list)-> None:
         numero += 1
         print(f'\nArchivo Nº {numero}: {file}')
 
-def crear_carpeta_drive(drive_service:Resource,nombre_carpeta:str)-> None:
+def crear_carpeta_drive(drive_service:Resource,nombre_carpeta:str)-> None: #chequear q este ok el try except
     """ 
     Pre: Recibe el servicio de drive.
     Post: Crea una carpeta en google drive y la almacena donde quiera el usuario.
@@ -451,7 +400,7 @@ def crear_carpeta_drive(drive_service:Resource,nombre_carpeta:str)-> None:
     except:
         print("\nLos datos ingresados no son validos, por favor intente nuevamente.\n")  
 
-def subir_archivo_drive(drive_service:Resource,file_name:str,folder_id:str,file_path:str) -> None:
+def subir_archivo_drive(drive_service:Resource,file_name:str,folder_id:str,file_path:str) -> None: # Ver que onda try execpt
     """ 
     Pre: Recibe los servicios de google drive, el nombre del archivo y el id de la carpeta.
     Post: Recibe un archivo y lo sube a la carpeta deseada por el usuraio.
@@ -470,7 +419,7 @@ def subir_archivo_drive(drive_service:Resource,file_name:str,folder_id:str,file_
     except: 
         print("\nLos datos ingresados no son validos, por favor intente nuevamente.\n")
 
-def descargar_archivo_drive(drive_service:Resource,file_id:str,file_name:str,file_path:str) -> None: 
+def descargar_archivo_drive(drive_service:Resource,file_id:str,file_name:str,file_path:str) -> None: #funcion para navegar entre archivos locales y que me devuuelva el path?
     """ 
     Pre: Recibo el servico de google drive API, el nombre del archivo, su ID y la carpeta en la cual lo quiere descargar.
     Post: Descarga el archivo solicitado por el usuario.
@@ -499,6 +448,22 @@ def descargar_archivo_drive(drive_service:Resource,file_id:str,file_name:str,fil
         print("\nLa carpeta en la cual quiere almacenar el archivo no exsiste.\n") #ver de crear sola la carpeta 
     except:
         print("\nLos datos ingresados no son validos, por favor intente nuevamente.\n")
+
+def buscar_archivos_drive(drive_service:Resource,palabra_buscador:str) -> None:
+    """ 
+    Pre: Recibe el servicio de google drive, y la palabra a buscar.
+    Post: Imprime por pantalla los resultados encontrados con su correspondiente id.
+    """
+    query = f"name contains '{palabra_buscador}'"
+
+    results = drive_service.files().list(fields="nextPageToken, files(id, name)",q=query).execute() #ahi me devuelve todos los archivos que tengan la palabra hola
+    items = results.get('files', [])
+    if not items:
+        print('No files found.')
+    else:
+        print('Files:')
+        for item in items:
+            print(f"{item['name']} ({item['id']})")
 
 def mover_archivos_drive(drive_service:Resource,file_id:str,folder_id:str) -> None:
     """ 
@@ -548,7 +513,22 @@ def escanear_archivos_drive(drive_service:Resource,carpeta_drive:str)-> list:
         lista_archivos_drive.append(lista_d)
     return lista_archivos_drive
 
-def comparacion_carpetas(drive_service:Resource,lista_local:list,lista_drive:list,carpeta_local:str,carpeta_drive:str) -> None: 
+def buscar_exsistencia_archivo(file_path:str,file_name:str)-> bool:
+    """ 
+    Pre: Le doy el file path y el nombre del archivo.
+    Post: Verifica si el archivo exsiste o no.
+    """
+    filePath = f"{file_path}/{file_name}"
+    try:
+        with open(filePath, 'r') as f:
+            exsiste = True
+    except FileNotFoundError as e:
+        exsiste = False
+    except IOError as e:
+        exsiste = False
+    return exsiste
+
+def comparacion_carpetas(drive_service:Resource,lista_local:list,lista_drive:list,carpeta_local:str,carpeta_drive:str) -> None: #ver como hacer para decsragar carpetas
     """ 
     Pre: Recibe la drive API, la lista local con su ruta y la del drive con su id.
     Post: Las compara y si hay diferencias, descarga o sube algun archivo.
@@ -599,15 +579,15 @@ def filtrar_archivos(carpeta_drive:list,carpeta_local:list) -> list:
 
     return carpeta_filtrada_drive,carpeta_filtrada_local
 
-def sincronizacion_drive(drive_service:Resource)-> None:
+def sincronizacion_drive(drive_service:Resource)-> None:  #chequear q funcionen bien los filtros. Permitir navegacion por carpetas drive y local
     """ 
     Pre: Servicio de drive API.
     Post: Sincronza los archivos locales de determinada carpeta con los de la nube de otra carpeta especificada por el usuario.
     """
-    print("\nVamos a sincronizar sus archivos! Por favor indiquenos su carpeta a sincronizar y su equivalente en el drive.\n") 
+    print("\nVamos a sincronizar sus archivos! Por favor indiquenos su carpeta a sincronizar y su equivalente en el drive.\n") #"/home/fransobral/Documents/prueba"
     carpeta_local = input("\nPor favor ingrese la ruta de la carpeta local a sincronizar: ")
-    print("\nA continuacion se le permitira navegar entre sus carpetas de drive. Por favor eliga la carpeta que quiere sincronizar y obtenga el id.\n")
-    carpeta_drive = navegacion_carpetas_drive(drive_service)
+    carpeta_drive = input("\nPor favor ingrese el id de la carpeta en drive a sincronizar: ") # "18_khSXz0n70PQExWRJHrUygBGMS-1kOu"
+
     while not os.path.exists(carpeta_local):
         carpeta_local = input("Ese diectorio no existe, por favor ingreselo nuevamente: ")
     try:
@@ -615,8 +595,6 @@ def sincronizacion_drive(drive_service:Resource)-> None:
         primer_filtro_drive = escanear_archivos_drive(drive_service,carpeta_drive)
 
         comparacion_carpetas(drive_service,primer_filtro_local,primer_filtro_drive,carpeta_local,carpeta_drive)
-
-        primer_filtro_drive,primer_filtro_local = filtrar_archivos(primer_filtro_drive,primer_filtro_local)
 
         primer_filtro_local = escanear_archivos_locales(carpeta_local) #vuelvo a ejecutar estas funciones ya que pueden haber sufrido modificaciones.
         primer_filtro_drive = escanear_archivos_drive(drive_service,carpeta_drive)
@@ -634,9 +612,9 @@ def sincronizacion_drive(drive_service:Resource)-> None:
     except FileNotFoundError:
         print("\nLa carpeta elegida no exsiste, por favor vuelva a intentarlo.\n")
     except:
-        print("\nAlgo fallo. Intente nuevamente.\n.")
+        print("\nSu id de drive es inexsistente, por favor intente nuevamente\n.")
 
-def comprobacion_recepcion_entregas(gmail_service:Resource) -> None: # Esta funcion deberia usarse con la parte de Fran Allegri
+def comprobacion_recepcion_entregas(gmail_service:Resource) -> None:
     """
     PRE: Se le pasa el servicio de gmail.
     POST: Ejecuta las funciones de mandar mails segun la entrega.
@@ -718,7 +696,7 @@ def validar_mail_evaluacion(gmail_service:Resource, mensajes_obtenidos) -> bool:
 
     return validacion
 
-def buscar_mails(gmail_service:Resource) -> list: 
+def buscar_mails(gmail_service:Resource) -> list: # Revisar esto
     """ 
     Pre: Recibe los servicios de gmail.
     Post: Agrega a una lista todos los mails que cumplan esa condicion.
@@ -732,7 +710,7 @@ def buscar_mails(gmail_service:Resource) -> list:
     
     return mensajes
 
-def mandar_mail(validacion:bool, gmail_service:Resource, mensajes_obtenidos) -> None: 
+def mandar_mail(validacion:bool, gmail_service:Resource, mensajes_obtenidos) -> None:  # Terminar de ver si anda.
     """ 
     Pre: Recibe los datos del usuario que mando un mail.
     Post: Envia un mail avisando si la entrega fue correcta o no.
@@ -757,9 +735,8 @@ def mandar_mail(validacion:bool, gmail_service:Resource, mensajes_obtenidos) -> 
     except Exception:
         print('Ha ocurrido un error, en cuanto podamos enviaremos el mail.')
 
-'''
-Esto es lo que hizo Francisco Allegrini
 
+'''
 def verificar_nombre(padron:int) -> str:
     """ 
     Pre: Recibe el padron del alumno.
@@ -809,7 +786,6 @@ def sistema_carpetas()-> None: #ver que onda esto
         ruta_alumnos = f"{ruta_docentes}/{nombre}"
         crear_carpeta_local(nombre_carpeta_alumnos,ruta_alumnos)
 '''      
-
 def main()-> None:
     drive_service = service_drive.obtener_servicio() #este es el servicio de drive
     gmail_service = service_gmail.obtener_servicio() #este es el servicio de gmail
